@@ -1,23 +1,33 @@
-## HEAD
+## 2.0.0 / 2021-11-23
 
-### Documentation
+Main changes on this release below, see also the [complete changelog](https://github.com/bedita/manager/compare/v1.2.0...v2.0.0).
 
-  * ...
+### User-visible changes
 
-### Minor Enhancements
+ * Export data in multiple formats, with config `Exports.formats` (csv, ods, xlsx)
+ * Bulk actions improved: change "field", copy/move content to destination folder, associate multiple categories, etc.
+ * Fast object creation form customized by type
+ * Filters enhanced in index and view pages
+ * Module(s) accesses by users role(s)
+ * `Categories` as trees in modules views
+ * Lock/unlock of contents
+ * Concurrent editors evidence
+ * `Admin` and `Model` modules for admins
 
-  * ...
-### Major Enhancements
+### Developer-visible changes
 
-  * ...
+ * Composer 2
+ * Nodejs 14
+ * Webpack and all other javascript dependencies upgrade
+ * Javascript linter [also GH workflow with lint validation]
+ * Plugin `dereuromark/cakephp-ide-helper` added to dev requirements
+ * `phpoffice/phpspreadsheet` to export data in multiple formats
 
-### Bug Fixes
+### Integration changes
 
-  * ...
-
-### Development Fixes
-
-  * ...
+ * Use bedita/bedita:4.5.0 docker image in CI
+ * Test coverage improved
+ * Security vulnerabilities fixes
 
 ## 1.2.0 / 2020-06-12
 
