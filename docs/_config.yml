@@ -1,11 +1,9 @@
-title: Your awesome title
+title: BEdita Manager
 author:
-  name: GitHub User
-  email: your-email@domain.com
+  name: BEdita developers team
+  email: info@bedita.net
 description: > # this means to ignore newlines until "show_excerpts:"
-  Write an awesome description for your new site here. You can edit this
-  line in _config.yml. It will appear in your document head meta (for
-  Google search results) and in your feed.xml site description.
+  BEdita Manager is the Web platform that let you handle your BEdita API instance(s).
 
 show_excerpts: false # set to true to show excerpts on the homepage
 
@@ -16,8 +14,8 @@ minima:
 
   # generate social links in footer
   social_links:
-    twitter: jekyllrb
-    github:  jekyll
+    #twitter: jekyllrb
+    github:  bedita
     # devto: jekyll
     # dribbble: jekyll
     # facebook: jekyll
