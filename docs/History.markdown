@@ -1,3 +1,5 @@
+
+# HEAD
 ## 2.0.0 / 2021-11-23
 
 Main changes on this release below, see also the [complete changelog](https://github.com/bedita/manager/compare/v1.2.0...v2.0.0).
