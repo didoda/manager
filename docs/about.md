@@ -16,5 +16,3 @@ You can find the source code for Twig at GitHub:
 
 You can find the source code for VueJS at GitHub:
 [VueJS](https://github.com/vuejs/vue)
-
-[bedita-organization]: https://github.com/bedita
