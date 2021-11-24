@@ -18,6 +18,11 @@
 /vendor/*
 !/vendor/.gitkeep
 
+# docs #
+########
+/docs/_site
+/docs/.jekyll-cache
+
 # plugins folders #
 ##########################
 /plugins/*
