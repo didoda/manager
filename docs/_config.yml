@@ -47,9 +47,10 @@ minima:
 
 # If you want to link only specific pages in your header, uncomment
 # this and add the path to the pages in order as they should show up
-# header_pages:
-# - introduction.md
-# - about.md
+header_pages:
+- introduction.md
+- about.md
+- changelog.md
 
 # Build settings
 theme: minima
