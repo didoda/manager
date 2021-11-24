@@ -13,7 +13,7 @@ Table of contents
 * TOC
 {:toc}
 
-# BEdita User Manual
+# BEdita Manager User Manual
 
 *BEdita Manager* (aka *BEM*, or *Manager*) is the official Web application for BEdita API.
 
