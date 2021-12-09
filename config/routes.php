@@ -122,6 +122,11 @@ Router::scope('/', function (RouteBuilder $routes) {
                 'remove:' . $controller
             )->setPass(['id']);
         }
+        $routes->get(
+            "/cache",
+            ['controller' => 'Cache', 'action' => 'clear'],
+            'cache:clear'
+        );
     });
 
     // Profile.
@@ -244,6 +249,21 @@ Router::scope('/', function (RouteBuilder $routes) {
         '/:object_type/view/new',
         ['controller' => 'Modules', 'action' => 'create'],
         ['_name' => 'modules:create']
+    );
+    $routes->connect(
+        '/:object_type/categories',
+        ['controller' => 'Modules', 'action' => 'listCategories'],
+        ['_name' => 'modules:categories:index']
+    );
+    $routes->connect(
+        '/:object_type/categories/save',
+        ['controller' => 'Modules', 'action' => 'saveCategory'],
+        ['_name' => 'modules:categories:save']
+    );
+    $routes->connect(
+        '/:object_type/categories/remove/:id',
+        ['controller' => 'Modules', 'action' => 'removeCategory'],
+        ['_name' => 'modules:categories:remove', 'pass' => ['id']]
     );
 
     $routes->connect(
