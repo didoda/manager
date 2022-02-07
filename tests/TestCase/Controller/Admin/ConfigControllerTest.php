@@ -2,6 +2,7 @@
 namespace App\Test\TestCase\Controller\Admin;
 
 use App\Controller\Admin\ConfigController;
+use BEdita\SDK\BEditaClient;
 use BEdita\WebTools\ApiClientProvider;
 use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
@@ -87,6 +88,7 @@ class ConfigControllerTest extends TestCase
             'filter',
             'schema',
             'readonly',
+            'deleteonly',
         ];
         $viewVars = (array)$this->CfgController->viewVars;
         foreach ($keys as $expectedKey) {
@@ -94,5 +96,19 @@ class ConfigControllerTest extends TestCase
         }
         static::assertEquals('config', $viewVars['resourceType']);
         static::assertEquals(['name'], $viewVars['properties']);
+    }
+
+    /**
+     * Test `beforeFilter`
+     *
+     * @return void
+     * @covers ::beforeFilter()
+     */
+    public function testBeforeFilter(): void
+    {
+        $event = $this->CfgController->dispatchEvent('Controller.beforeFilter');
+        $this->CfgController->beforeFilter($event);
+        $viewVars = (array)$this->CfgController->viewVars;
+        static::assertEquals(['' => __('No application'), 1 => 'default-app', 2 => 'manager'], $viewVars['applications']);
     }
 }

@@ -19,7 +19,7 @@ use Cake\Utility\Hash;
 /**
  * Application View default class
  *
- *
+ * @property \App\View\Helper\AdminHelper $Admin
  * @property \App\View\Helper\CalendarHelper $Calendar
  * @property \App\View\Helper\CategoriesHelper $Categories
  * @property \App\View\Helper\EditorsHelper $Editors
@@ -34,7 +34,6 @@ use Cake\Utility\Hash;
  */
 class AppView extends TwigView
 {
-
     /**
      * {@inheritDoc}
      */
@@ -50,6 +49,7 @@ class AppView extends TwigView
                 'inputContainer' => '<div class="input {{type}}{{required}} {{containerClass}}">{{content}}</div>',
             ],
         ]);
+        $this->loadHelper('Admin');
         $this->loadHelper('Calendar');
         $this->loadHelper('Categories');
         $this->loadHelper('Editors');
@@ -74,7 +74,7 @@ class AppView extends TwigView
      *
      * If `Elements.{module_name}.{element_name}` exists in configuration a custom element is loaded
      */
-    protected function _getElementFileName($name, $pluginCheck = true)
+    protected function _getElementFileName($name, $pluginCheck = true): string
     {
         $module = (array)$this->get('currentModule', []);
         $custom = Configure::read(sprintf('Elements.%s', Hash::get($module, 'name', '')));
