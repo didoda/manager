@@ -5,6 +5,7 @@
  * <relations-add> component used for Panel
  *
  * @prop {String} relationName relation name
+ * @prop {String} relationLabel relation label
  * @prop {Array} alreadyInView array of objects already added
  * @prop {Object} relationTypes list of available object types
  * @prop {String} configPaginateSizes list of sizes for pagination
@@ -38,6 +39,10 @@ export default {
 
     props: {
         relationName: {
+            type: String,
+            default: '',
+        },
+        relationLabel: {
             type: String,
             default: '',
         },
@@ -279,6 +284,9 @@ export default {
             try {
                 const response = await fetch(postUrl, options);
                 const responseJson = await response.json();
+                if (responseJson.error) {
+                    throw new Error(responseJson.error);
+                }
 
                 let createdObjects = (Array.isArray(responseJson.data) ? responseJson.data : [responseJson.data]) || [];
 
@@ -339,7 +347,7 @@ export default {
                 `from-relation-${this.relationName}`,
                 {
                     selected: this.selectedObjects.indexOf(related) !== -1,
-                    unselectable: this.isUnselectableObject(related.id),
+                    unselectable: this.isUnselectableObject(related?.id),
                 }
             ]
         },
@@ -358,6 +366,9 @@ export default {
             const fields = document.querySelectorAll('.fastCreateField');
             for (let i = 0; i < fields.length; i++) {
                 fields[i].value = '';
+                if (fields[i].jsonEditor) {
+                    fields[i].jsonEditor.update({"text": ""});
+                }
             }
         },
 
@@ -412,7 +423,6 @@ export default {
             } else {
                 this.selectedObjects.push(object);
             }
-            console.debug(evt);
         },
 
         /**

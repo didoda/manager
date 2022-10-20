@@ -1,4 +1,5 @@
 <?php
+
 /**
  * CakePHP(tm) : Rapid Development Framework (https://cakephp.org)
  * Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
@@ -13,8 +14,11 @@
  * @license       https://opensource.org/licenses/mit-license.php MIT License
  */
 use Cake\Core\Configure;
-use Cake\Core\Exception\MissingPluginException;
-use Cake\Core\Plugin;
+use Cake\Database\Connection;
+use Cake\Database\Driver\Sqlite;
+use Cake\Datasource\ConnectionManager;
+use Cake\Error\ExceptionTrap;
+use Cake\Error\Renderer\ConsoleExceptionRenderer;
 
 /**
  * Additional bootstrapping and configuration for CLI environments should
@@ -26,5 +30,20 @@ use Cake\Core\Plugin;
 //Configure::write('App.fullBaseUrl', php_uname('n'));
 
 // Set logs to different files so they don't have permission conflicts.
-Configure::write('Log.debug.file', 'cli-debug');
-Configure::write('Log.error.file', 'cli-error');
+if (Configure::check('Log.debug')) {
+    Configure::write('Log.debug.file', 'cli-debug');
+}
+if (Configure::check('Log.error')) {
+    Configure::write('Log.error.file', 'cli-error');
+}
+
+// this is for using "bin/cake bake"
+ConnectionManager::setConfig(['default' => [
+    'className' => Connection::class,
+    'driver' => Sqlite::class,
+]]);
+
+// override Error.exceptionRenderer to ConsoleExceptionRenderer
+$errorConfig = Configure::read('Error');
+$errorConfig['exceptionRenderer'] = ConsoleExceptionRenderer::class;
+(new ExceptionTrap($errorConfig))->register();

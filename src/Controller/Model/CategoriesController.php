@@ -37,7 +37,7 @@ class CategoriesController extends ModelBaseController
     protected $singleView = false;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function initialize(): void
     {
@@ -51,16 +51,21 @@ class CategoriesController extends ModelBaseController
      */
     public function index(): ?Response
     {
-        $this->request->allowMethod(['get']);
+        $this->getRequest()->allowMethod(['get']);
 
-        $objectTypes = $this->Schema->objectTypesFeatures()['categorized'];
+        $otfeatures = $this->Schema->objectTypesFeatures();
+        $objectTypes = $otfeatures['categorized'];
         $objectTypes = array_combine($objectTypes, $objectTypes);
-        $response = $this->Categories->index(null, $this->request->getQueryParams());
+        $response = $this->Categories->index(null, $this->getRequest()->getQueryParams());
         $resources = $this->Categories->map($response);
         $roots = $this->Categories->getAvailableRoots($resources);
         $categoriesTree = $this->Categories->tree($resources);
+        $names = [];
+        foreach ($objectTypes as $objectType) {
+            $names[$objectType] = $this->Categories->names($objectType);
+        }
 
-        $this->set(compact('resources', 'roots', 'categoriesTree'));
+        $this->set(compact('resources', 'roots', 'categoriesTree', 'names'));
         $this->set('object_types', $objectTypes);
         $this->set('meta', (array)$response['meta']);
         $this->set('links', (array)$response['links']);

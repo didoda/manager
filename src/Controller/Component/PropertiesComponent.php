@@ -14,16 +14,25 @@
 namespace App\Controller\Component;
 
 use App\Utility\CacheTools;
+use BEdita\WebTools\ApiClientProvider;
 use Cake\Cache\Cache;
 use Cake\Controller\Component;
 use Cake\Core\Configure;
 use Cake\Utility\Hash;
+use Cake\Utility\Inflector;
 
 /**
  * Component to handle properties view in modules.
+ *
+ * @property \App\Controller\Component\ConfigComponent $Config
  */
 class PropertiesComponent extends Component
 {
+    /**
+     * @inheritDoc
+     */
+    protected $components = ['Config'];
+
     /**
      * Default properties groups
      *
@@ -95,7 +104,6 @@ class PropertiesComponent extends Component
 
             return;
         }
-
         Configure::load('properties');
         $properties = (array)Configure::read('Properties');
         $defaultProperties = (array)Configure::read('DefaultProperties');
@@ -139,7 +147,6 @@ class PropertiesComponent extends Component
      *
      * @param array  $object Object data to view
      * @param string $type   Object type
-     *
      * @return array
      */
     public function viewGroups(array $object, string $type): array
@@ -178,7 +185,6 @@ class PropertiesComponent extends Component
      * List properties to display in `index` view
      *
      * @param string $type Object type name
-     *
      * @return array
      */
     public function indexList(string $type): array
@@ -192,7 +198,6 @@ class PropertiesComponent extends Component
      * List of filter to display in `filter` view
      *
      * @param string $type Object type name
-     *
      * @return array
      */
     public function filterList(string $type): array
@@ -204,7 +209,6 @@ class PropertiesComponent extends Component
      * List of all filters, grouped by type, for passed `$types` list
      *
      * @param string[] $types List of types to get filters of
-     *
      * @return array
      */
     public function filtersByType(array $types): array
@@ -230,12 +234,11 @@ class PropertiesComponent extends Component
      * List of bulk actions to display in `index` view
      *
      * @param string $type Object type name
-     *
      * @return array
      */
     public function bulkList(string $type): array
     {
-        return $this->getConfig(sprintf('Properties.%s.bulk', $type), $this->defaultGroups['bulk']);
+        return (array)$this->getConfig(sprintf('Properties.%s.bulk', $type), $this->defaultGroups['bulk']);
     }
 
     /**
@@ -243,11 +246,80 @@ class PropertiesComponent extends Component
      * Relations not included will be displayed after these.
      *
      * @param string $type Object type name
-     *
      * @return array
      */
     public function relationsList(string $type): array
     {
-        return $this->getConfig(sprintf('Properties.%s.relations', $type), []);
+        return (array)$this->getConfig(sprintf('Properties.%s.relations', $type), []);
+    }
+
+    /**
+     * List of hidden relations.
+     *
+     * @param string $type Object type name
+     * @return array
+     */
+    public function hiddenRelationsList(string $type): array
+    {
+        return (array)$this->getConfig(sprintf('Properties.%s.relations._hide', $type), []);
+    }
+
+    /**
+     * List of readonly relations.
+     *
+     * @param string $type Object type name
+     * @return array
+     */
+    public function readonlyRelationsList(string $type): array
+    {
+        return (array)$this->getConfig(sprintf('Properties.%s.relations._readonly', $type), []);
+    }
+
+    /**
+     * Types options for property Type select combo
+     *
+     * @return array
+     */
+    public function typesOptions(): array
+    {
+        $label = __('Type');
+        $type = 'select';
+        $options = ['' => ''];
+        $apiClient = ApiClientProvider::getApiClient();
+        $query = [
+            'page_size' => 100,
+            'sort' => 'id',
+        ];
+        $response = (array)$apiClient->get('/model/property_types', $query);
+        $types = (array)Hash::extract($response, 'data.{n}.attributes.name');
+        foreach ($types as $value) {
+            $text = Inflector::humanize($value);
+            $options[] = compact('text', 'value');
+        }
+
+        return compact('label', 'type', 'options');
+    }
+
+    /**
+     * Get associations options for select multiple as list of checkboxes
+     *
+     * @param array $value The value
+     * @return array
+     */
+    public function associationsOptions(array $value): array
+    {
+        $fields = [
+            'DateRanges',
+            'Streams',
+            'Categories',
+            'Tags',
+        ];
+        $fields = array_unique(array_merge($fields, $value));
+        foreach ($fields as $text) {
+            $value = $text;
+            $options[] = compact('text', 'value');
+        }
+
+        return $options;
     }
 }

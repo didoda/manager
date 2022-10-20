@@ -13,9 +13,9 @@
 namespace App\Test\TestCase\Controller\Component;
 
 use App\Controller\Component\PropertiesComponent;
+use App\Controller\ModulesController;
 use App\Utility\CacheTools;
 use Cake\Cache\Cache;
-use Cake\Controller\Controller;
 use Cake\Core\Configure;
 use Cake\TestSuite\TestCase;
 
@@ -34,7 +34,7 @@ class PropertiesComponentTest extends TestCase
     public $Properties;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function setUp(): void
     {
@@ -44,7 +44,7 @@ class PropertiesComponentTest extends TestCase
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function tearDown(): void
     {
@@ -61,10 +61,15 @@ class PropertiesComponentTest extends TestCase
      */
     protected function createComponent(): void
     {
-        $controller = new Controller();
+        $controller = new ModulesController();
         $registry = $controller->components();
-        $this->Properties = $registry->load(PropertiesComponent::class);
-        $this->Properties->startup();
+        // Mock GET /config using cache
+        Cache::write(CacheTools::cacheKey('config.Modules'), []);
+        Cache::write(CacheTools::cacheKey('config.Properties'), []);
+        /** @var \App\Controller\Component\PropertiesComponent $Properties */
+        $Properties = $registry->load(PropertiesComponent::class);
+        $Properties->startup();
+        $this->Properties = $Properties;
     }
 
     /**
@@ -103,7 +108,6 @@ class PropertiesComponentTest extends TestCase
      * Test `indexList()` method.
      *
      * @return void
-     *
      * @covers ::indexList()
      */
     public function testIndexList(): void
@@ -123,7 +127,6 @@ class PropertiesComponentTest extends TestCase
      * Test `filterList()` method.
      *
      * @return void
-     *
      * @covers ::filterList()
      */
     public function testFilterList(): void
@@ -145,7 +148,6 @@ class PropertiesComponentTest extends TestCase
      * Test `filtersByType()` method.
      *
      * @return void
-     *
      * @covers ::filtersByType()
      */
     public function testFiltersByType(): void
@@ -172,10 +174,25 @@ class PropertiesComponentTest extends TestCase
     }
 
     /**
+     * Test `bulkList()` method.
+     *
+     * @return void
+     * @covers ::bulkList()
+     */
+    public function testBulkList(): void
+    {
+        Cache::clear();
+        $expected = ['cat', 'dog', 'horse'];
+        Configure::write('Properties.animals.bulk', $expected);
+        $this->createComponent();
+        $actual = $this->Properties->bulkList('animals');
+        static::assertEquals($expected, $actual);
+    }
+
+    /**
      * Test `relationsList()` method.
      *
      * @return void
-     *
      * @covers ::relationsList()
      */
     public function testRelationsList(): void
@@ -188,6 +205,44 @@ class PropertiesComponentTest extends TestCase
         $this->createComponent();
 
         $list = $this->Properties->relationsList('cats');
+        static::assertEquals($index, $list);
+    }
+
+    /**
+     * Test `hiddenRelationsList()` method.
+     *
+     * @return void
+     * @covers ::hiddenRelationsList()
+     */
+    public function testHiddenRelationsList(): void
+    {
+        Cache::clear();
+
+        $index = ['has_food', 'is_tired', 'sleeps_with'];
+        Configure::write('Properties.cats.relations._hide', $index);
+
+        $this->createComponent();
+
+        $list = $this->Properties->hiddenRelationsList('cats');
+        static::assertEquals($index, $list);
+    }
+
+    /**
+     * Test `readonlyRelationsList()` method.
+     *
+     * @return void
+     * @covers ::readonlyRelationsList()
+     */
+    public function testReadonlyRelationsList(): void
+    {
+        Cache::clear();
+
+        $index = ['has_food', 'is_tired', 'sleeps_with'];
+        Configure::write('Properties.cats.relations._readonly', $index);
+
+        $this->createComponent();
+
+        $list = $this->Properties->readonlyRelationsList('cats');
         static::assertEquals($index, $list);
     }
 
@@ -425,7 +480,6 @@ class PropertiesComponentTest extends TestCase
      * @param string $type Object type.
      * @param array $config Properties configuration to write for $type
      * @return void
-     *
      * @dataProvider viewGroupsProvider()
      * @covers ::viewGroups()
      * @covers ::initialize()
@@ -448,5 +502,41 @@ class PropertiesComponentTest extends TestCase
         foreach ($expected as $k => $v) {
             static::assertEquals($v, $result[$k]);
         }
+    }
+
+    /**
+     * Test `typesOptions`.
+     *
+     * @return void
+     * @covers ::typesOptions()
+     */
+    public function testTypesOptions(): void
+    {
+        $this->createComponent();
+        $actual = $this->Properties->typesOptions();
+        static::assertIsArray($actual);
+        static::assertIsArray($actual['options']);
+        static::assertEquals('Type', $actual['label']);
+        static::assertEquals('select', $actual['type']);
+    }
+
+    /**
+     * Test `associationsOptions`
+     *
+     * @return void
+     * @covers ::associationsOptions()
+     */
+    public function testAssociationsOptions(): void
+    {
+        $this->createComponent();
+        $expected = [
+            ['text' => 'DateRanges', 'value' => 'DateRanges'],
+            ['text' => 'Streams', 'value' => 'Streams'],
+            ['text' => 'Categories', 'value' => 'Categories'],
+            ['text' => 'Tags', 'value' => 'Tags'],
+            ['text' => 'Dummy', 'value' => 'Dummy'],
+        ];
+        $actual = $this->Properties->associationsOptions(['Dummy']);
+        static::assertEquals($expected, $actual);
     }
 }

@@ -32,6 +32,7 @@ export default {
         DateRangesView: () => import(/* webpackChunkName: "date-ranges-view" */'app/components/date-ranges-view/date-ranges-view'),
         History: () => import(/* webpackChunkName: "history" */'app/components/history/history'),
         CoordinatesView: () => import(/* webpackChunkName: "coordinates-view" */'app/components/coordinates-view'),
+        TagPicker: () => import(/* webpackChunkName: "tag-picker" */'app/components/tag-picker/tag-picker'),
     },
 
     props: {
@@ -133,11 +134,17 @@ export default {
             return (tabs.indexOf(this.tabName) >= 0);
         },
         readTabsOpen() {
-            let tabs = [];
             if (localStorage.getItem(STORAGE_TABS_KEY)) {
-                tabs = JSON.parse(localStorage.getItem(STORAGE_TABS_KEY));
+                return JSON.parse(localStorage.getItem(STORAGE_TABS_KEY));
             }
-            return tabs;
+            // if `isDefaultOpen` is true, on the first access, this tab is saved as open
+            // Note: there can be only one tab having `tabName` and `isDefaultOpen` set as true
+            if (this.isDefaultOpen) {
+                localStorage.setItem(STORAGE_TABS_KEY, JSON.stringify([this.tabName]));
+                return [this.tabName];
+            };
+
+            return [];
         },
         updateStorage() {
             if (!this.tabName) {
@@ -160,28 +167,30 @@ export default {
         async loadInfoUsers() {
             this.isLoading = true;
 
-            const creatorId = this.object?.meta?.created_by;
-            const modifierId = this.object?.meta?.modified_by;
-            const usersId = [creatorId, modifierId];
-            const userRes = await fetch(`${API_URL}api/users?filter[id]=${usersId.join(',')}&fields[users]=name,surname,username`, API_OPTIONS);
-            const userJson = await userRes.json();
-            const users = userJson.data;
+            if (BEDITA.canReadUsers) {
+                const creatorId = this.object?.meta?.created_by;
+                const modifierId = this.object?.meta?.modified_by;
+                const usersId = [creatorId, modifierId];
+                const userRes = await fetch(`${API_URL}api/users?filter[id]=${usersId.join(',')}&fields[users]=name,surname,username`, API_OPTIONS);
+                const userJson = await userRes.json();
+                const users = userJson.data;
 
-            users.map((user) => {
-                const href = `${BEDITA.base}/view/${user.id}`;
-                const userInfo = (user.attributes.name  != undefined || user.attributes.surname != undefined)
-                    ? user.attributes.name + ' ' + user.attributes.surname
-                    : user.attributes.username;
+                users.map((user) => {
+                    const href = `${BEDITA.base}/view/${user.id}`;
+                    const userInfo = (user.attributes.name  != undefined || user.attributes.surname != undefined)
+                        ? user.attributes.name + ' ' + user.attributes.surname
+                        : user.attributes.username;
 
-                // using == because user.id String and creatorById Number
-                if(user.id == creatorId && userInfo!= undefined) {
-                    document.querySelector(`td[name='created_by']`).innerHTML = `<a href="${href}">${userInfo}</a>`;
-                }
+                    // using == because user.id String and creatorById Number
+                    if(user.id == creatorId && userInfo!= undefined) {
+                        document.querySelector(`td[name='created_by']`).innerHTML = `<a href="${href}">${userInfo}</a>`;
+                    }
 
-                if (user.id == modifierId != undefined) {
-                    document.querySelector(`td[name='modified_by']`).innerHTML = `<a href="${href}">${userInfo}</a>`;
-                }
-            });
+                    if (user.id == modifierId != undefined) {
+                        document.querySelector(`td[name='modified_by']`).innerHTML = `<a href="${href}">${userInfo}</a>`;
+                    }
+                });
+            }
 
             this.isLoading = false;
             this.userInfoLoaded = true;

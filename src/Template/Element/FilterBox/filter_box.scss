@@ -18,7 +18,8 @@
     flex-direction: column;
 
     .basic-filters,
-    .more-filters {
+    .more-filters,
+    .filter-buttons {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
@@ -66,10 +67,6 @@
             &:last-child {
                 margin-right: 0;
             }
-        }
-
-        &.date_ranges .filter-label {
-            margin-top: 1rem;
         }
 
         .date-filter {

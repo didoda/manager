@@ -13,9 +13,11 @@
 
 namespace App\Test\TestCase\Form;
 
+use App\Form\Control;
 use App\Form\Form;
 use App\Form\Options;
 use Cake\TestSuite\TestCase;
+use Cake\Utility\Hash;
 
 /**
  * {@see \App\Form\Form} Test Case
@@ -32,15 +34,35 @@ class FormTest extends TestCase
     public function getMethodProvider(): array
     {
         return [
-            'name with chars to remove' => [
-                Options::class,
-                'old_password',
+            'name with chars to remove 1' => [
+                [
+                    'class' => Options::class,
+                    'methodName' => 'old_password',
+                ],
                 [Options::class, 'oldPassword'],
             ],
-            'name with chars to remove' => [
-                Options::class,
-                'confirm_password',
+            'name with chars to remove 2' => [
+                [
+                    'class' => Options::class,
+                    'methodName' => 'confirm_password',
+                ],
                 [Options::class, 'confirmPassword'],
+            ],
+            'format email' => [
+                [
+                    'class' => Control::class,
+                    'methodName' => 'whatever',
+                    'format' => 'email',
+                ],
+                [Control::class, 'email'],
+            ],
+            'format uri' => [
+                [
+                    'class' => Control::class,
+                    'methodName' => 'whatever',
+                    'format' => 'uri',
+                ],
+                [Control::class, 'uri'],
             ],
         ];
     }
@@ -48,16 +70,22 @@ class FormTest extends TestCase
     /**
      * Test `getMethod` method
      *
-     * @param string $class The class
-     * @param string $methodName The method name
+     * @param array $options The options
      * @param array $expected The expected method array
      * @return void
      * @dataProvider getMethodProvider()
      * @covers ::getMethod
      */
-    public function testGetMethod(string $class, string $methodName, array $expected): void
+    public function testGetMethod(array $options, array $expected): void
     {
-        $actual = Form::getMethod($class, $methodName);
+        $class = (string)Hash::get($options, 'class');
+        $methodName = (string)Hash::get($options, 'methodName');
+        $format = (string)Hash::get($options, 'format');
+        if ($format) {
+            $actual = Form::getMethod($class, $methodName, $format);
+        } else {
+            $actual = Form::getMethod($class, $methodName);
+        }
 
         static::assertSame($expected, $actual);
     }
@@ -66,7 +94,6 @@ class FormTest extends TestCase
      * Test `getMethod` method exception 'not callable'
      *
      * @return void
-     *
      * @covers ::getMethod
      */
     public function testGetMethodNotCallable(): void
@@ -76,5 +103,24 @@ class FormTest extends TestCase
         static::expectException(get_class($expected));
         static::expectExceptionMessage($expected->getMessage());
         Form::getMethod(Form::class, $methodName);
+    }
+
+    /**
+     * Data provider for `testLabel`.
+     *
+     * @return array
+     */
+    public function labelProvider(): array
+    {
+        return [
+            'empty' => [
+                '',
+                '',
+            ],
+            'dummy' => [
+                'dummy',
+                'Dummy',
+            ],
+        ];
     }
 }

@@ -10,3 +10,15 @@ body.view-admin {
         color: white;
     }
 }
+
+.content {
+    min-width: 400px;
+}
+
+.perm-hidden {
+    opacity: .5;
+}
+
+.view-admin .module-index .fieldset .tab {
+    gap: 5px;
+}

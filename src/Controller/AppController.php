@@ -1,7 +1,7 @@
 <?php
 /**
  * BEdita, API-first content management framework
- * Copyright 2019 ChannelWeb Srl, Chialab Srl
+ * Copyright 2022 ChannelWeb Srl, Chialab Srl
  *
  * This file is part of BEdita: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published
@@ -12,11 +12,12 @@
  */
 namespace App\Controller;
 
+use Authentication\Identity;
 use BEdita\WebTools\ApiClientProvider;
 use Cake\Controller\Controller;
 use Cake\Controller\Exception\SecurityException;
 use Cake\Core\Configure;
-use Cake\Event\Event;
+use Cake\Event\EventInterface;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Response;
 use Cake\Utility\Hash;
@@ -24,9 +25,11 @@ use Cake\Utility\Hash;
 /**
  * Base Application Controller.
  *
+ * @property \Authentication\Controller\Component\AuthenticationComponent $Authentication
+ * @property \App\Controller\Component\ConfigComponent $Config
+ * @property \App\Controller\Component\FlashComponent $Flash
  * @property \App\Controller\Component\ModulesComponent $Modules
  * @property \App\Controller\Component\SchemaComponent $Schema
- * @property \App\Controller\Component\FlashComponent $Flash
  */
 class AppController extends Controller
 {
@@ -38,7 +41,7 @@ class AppController extends Controller
     protected $apiClient = null;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function initialize(): void
     {
@@ -53,15 +56,9 @@ class AppController extends Controller
             $this->apiClient = ApiClientProvider::getApiClient();
         }
 
-        $this->loadComponent('Auth', [
-            'authenticate' => [
-                'BEdita/WebTools.Api' => [],
-            ],
-            'loginAction' => ['_name' => 'login'],
-            'loginRedirect' => ['_name' => 'dashboard'],
+        $this->loadComponent('Authentication.Authentication', [
+            'logoutRedirect' => '/login',
         ]);
-
-        $this->Auth->deny();
 
         $this->loadComponent('Modules', [
             'currentModuleName' => $this->name,
@@ -70,14 +67,15 @@ class AppController extends Controller
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function beforeFilter(Event $event): ?Response
+    public function beforeFilter(EventInterface $event): ?Response
     {
-        $tokens = $this->Auth->user('tokens');
-        if (!empty($tokens)) {
-            $this->apiClient->setupTokens($tokens);
-        } elseif (!in_array($this->request->getPath(), ['/login'])) {
+        /** @var \Authentication\Identity|null $identity */
+        $identity = $this->Authentication->getIdentity();
+        if ($identity && $identity->get('tokens')) {
+            $this->apiClient->setupTokens($identity->get('tokens'));
+        } elseif (!in_array(rtrim($this->getRequest()->getPath(), '/'), ['/login'])) {
             $route = $this->loginRedirectRoute();
             $this->Flash->error(__('Login required'));
 
@@ -92,8 +90,8 @@ class AppController extends Controller
     /**
      * Handle security blackhole with logs for now
      *
-     * @param string $type Excepion type
-     * @param SecurityException $exception Raised exception
+     * @param string $type Exception type
+     * @param \Cake\Controller\Exception\SecurityException $exception Raised exception
      * @return void
      * @throws \Cake\Http\Exception\BadRequestException
      * @codeCoverageIgnore
@@ -101,16 +99,16 @@ class AppController extends Controller
     public function blackhole(string $type, SecurityException $exception): void
     {
         // Log original exception
-        $this->log($exception, 'error');
+        $this->log($exception->getMessage(), 'error');
 
         // Log form data & session id
-        $token = (array)$this->request->getData('_Token');
+        $token = (array)$this->getRequest()->getData('_Token');
         unset($token['debug']);
         $this->log('[Blackhole] type: ' . $type, 'debug');
         $this->log('[Blackhole] form token: ' . json_encode($token), 'debug');
-        $this->log('[Blackhole] form fields: ' . json_encode(array_keys((array)$this->request->getData())), 'debug');
-        $this->log('[Blackhole] form session id: ' . (string)$this->request->getData('_session_id'), 'debug');
-        $sessionId = $this->request->getSession() ? $this->request->getSession()->id() : null;
+        $this->log('[Blackhole] form fields: ' . json_encode(array_keys((array)$this->getRequest()->getData())), 'debug');
+        $this->log('[Blackhole] form session id: ' . (string)$this->getRequest()->getData('_session_id'), 'debug');
+        $sessionId = $this->getRequest()->getSession()->id();
         $this->log('[Blackhole] current session id: ' . $sessionId, 'debug');
 
         // Throw a generic bad request exception.
@@ -130,17 +128,17 @@ class AppController extends Controller
         $route = ['_name' => 'login'];
 
         // if request is not a get, return route without redirect.
-        if (!$this->request->is('get')) {
+        if (!$this->getRequest()->is('get')) {
             return $route;
         }
 
         // if redirect is app webroot, return route without redirect.
-        $redirect = $this->request->getUri()->getPath();
-        if ($redirect === $this->request->getAttribute('webroot')) {
+        $redirect = $this->getRequest()->getUri()->getPath();
+        if ($redirect === $this->getRequest()->getAttribute('webroot')) {
             return $route;
         }
 
-        return $route + compact('redirect');
+        return $route + ['?' => compact('redirect')];
     }
 
     /**
@@ -150,10 +148,18 @@ class AppController extends Controller
      */
     protected function setupOutputTimezone(): void
     {
-        $timezone = $this->Auth->user('timezone');
-        if ($timezone) {
-            Configure::write('I18n.timezone', $timezone);
+        /** @var \Authentication\Identity|null $identity */
+        $identity = $this->Authentication->getIdentity();
+        if (!$identity) {
+            return;
         }
+
+        $timezone = $identity->get('timezone');
+        if (!$timezone) {
+            return;
+        }
+
+        Configure::write('I18n.timezone', $timezone);
     }
 
     /**
@@ -161,21 +167,23 @@ class AppController extends Controller
      *
      * Update session tokens if updated/refreshed by client
      */
-    public function beforeRender(Event $event): ?Response
+    public function beforeRender(EventInterface $event): ?Response
     {
-        if ($this->Auth && $this->Auth->user()) {
-            $user = $this->Auth->user();
+        /** @var \Authentication\Identity|null $user */
+        $user = $this->Authentication->getIdentity();
+        if ($user) {
             $tokens = $this->apiClient->getTokens();
-            if ($tokens && $user['tokens'] !== $tokens) {
-                // Update tokens in session.
-                $user['tokens'] = $tokens;
-                $this->Auth->setUser($user);
+            if ($tokens && $user->get('tokens') !== $tokens) {
+                $data = compact('tokens') + (array)$user->getOriginalData();
+                $user = new Identity($data);
+                $this->Authentication->setIdentity($user);
             }
 
             $this->set(compact('user'));
         }
 
-        $this->viewBuilder()->setTemplatePath('Pages/' . $this->_viewPath());
+        $path = $this->viewBuilder()->getTemplatePath();
+        $this->viewBuilder()->setTemplatePath('Pages/' . $path);
 
         return null;
     }
@@ -188,7 +196,7 @@ class AppController extends Controller
      */
     protected function prepareRequest($type): array
     {
-        $data = (array)$this->request->getData();
+        $data = (array)$this->getRequest()->getData();
 
         $this->specialAttributes($data);
         $this->setupParentsRelation($type, $data);
@@ -223,7 +231,8 @@ class AppController extends Controller
         if (!empty($data['_jsonKeys'])) {
             $keys = explode(',', $data['_jsonKeys']);
             foreach ($keys as $key) {
-                $data[$key] = json_decode($data[$key], true);
+                $value = Hash::get($data, $key);
+                $data = Hash::insert($data, $key, json_decode((string)$value, true));
             }
             unset($data['_jsonKeys']);
         }
@@ -243,6 +252,17 @@ class AppController extends Controller
             $data['categories'] = array_map(function ($category) {
                 return ['name' => $category];
             }, $data['categories']);
+        }
+
+        // decode json fields
+        $types = (array)Hash::get($data, '_types');
+        if (!empty($types)) {
+            foreach ($types as $field => $type) {
+                if ($type === 'json' && is_string($data[$field])) {
+                    $data[$field] = json_decode($data[$field], true);
+                }
+            }
+            unset($data['_types']);
         }
     }
 
@@ -367,25 +387,20 @@ class AppController extends Controller
      *
      * @param array $options The options for request check(s)
      * @return array The request data for required parameters, if any
-     * @throws Cake\Http\Exception\BadRequestException on empty request or empty data by parameter
+     * @throws \Cake\Http\Exception\BadRequestException on empty request or empty data by parameter
      */
     protected function checkRequest(array $options = []): array
     {
-        // check request
-        if (empty($this->request)) {
-            throw new BadRequestException('Empty request');
-        }
-
         // check allowed methods
         if (!empty($options['allowedMethods'])) {
-            $this->request->allowMethod($options['allowedMethods']);
+            $this->getRequest()->allowMethod($options['allowedMethods']);
         }
 
         // check request required parameters, if any
         $data = [];
         if (!empty($options['requiredParameters'])) {
             foreach ($options['requiredParameters'] as $param) {
-                $val = $this->request->getData($param);
+                $val = $this->getRequest()->getData($param);
                 if (empty($val)) {
                     throw new BadRequestException(sprintf('Empty %s', $param));
                 }
@@ -409,18 +424,18 @@ class AppController extends Controller
      */
     protected function applySessionFilter(): ?Response
     {
-        $session = $this->request->getSession();
+        $session = $this->getRequest()->getSession();
         $sessionKey = sprintf('%s.filter', $this->Modules->getConfig('currentModuleName'));
 
         // if reset request, delete session data by key and redirect to proper uri
-        if ($this->request->getQuery('reset') === '1') {
+        if ($this->getRequest()->getQuery('reset') === '1') {
             $session->delete($sessionKey);
 
-            return $this->redirect((string)$this->request->getUri()->withQuery(''));
+            return $this->redirect((string)$this->getRequest()->getUri()->withQuery(''));
         }
 
         // write request query parameters (if any) in session
-        $params = $this->request->getQueryParams();
+        $params = $this->getRequest()->getQueryParams();
         if (!empty($params)) {
             unset($params['_search']);
             $session->write($sessionKey, $params);
@@ -433,7 +448,7 @@ class AppController extends Controller
         if (!empty($params)) {
             $query = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
 
-            return $this->redirect((string)$this->request->getUri()->withQuery($query));
+            return $this->redirect((string)$this->getRequest()->getUri()->withQuery($query));
         }
 
         return null;
@@ -460,14 +475,14 @@ class AppController extends Controller
         $objectNav = [];
         foreach ($objects as $i => $object) {
             $objectNav[$moduleName][$object['id']] = [
-                'prev' => ($i > 0) ? Hash::get($objects, sprintf('%d.id', $i - 1)) : null,
-                'next' => ($i + 1 < $total) ? Hash::get($objects, sprintf('%d.id', $i + 1)) : null,
+                'prev' => $i > 0 ? Hash::get($objects, sprintf('%d.id', $i - 1)) : null,
+                'next' => $i + 1 < $total ? Hash::get($objects, sprintf('%d.id', $i + 1)) : null,
                 'index' => $i + 1,
                 'total' => $total,
                 'object_type' => Hash::get($objects, sprintf('%d.object_type', $i)),
             ];
         }
-        $session = $this->request->getSession();
+        $session = $this->getRequest()->getSession();
         $session->write('objectNav', $objectNav);
         $session->write('objectNavModule', $moduleName);
     }
@@ -481,7 +496,7 @@ class AppController extends Controller
     protected function getObjectNav($id): array
     {
         // get objectNav from session
-        $session = $this->request->getSession();
+        $session = $this->getRequest()->getSession();
         $objectNav = (array)$session->read('objectNav');
         if (empty($objectNav)) {
             return [];
@@ -491,5 +506,20 @@ class AppController extends Controller
         $objectNavModule = (string)$session->read('objectNavModule');
 
         return (array)Hash::get($objectNav, sprintf('%s.%s', $objectNavModule, $id), []);
+    }
+
+    /**
+     * Cake 4 compatibility wrapper method: set items to serialize for the view
+     *
+     * In Cake 3 => $this->set('_serialize', ['data']);
+     * In Cake 4 => $this->viewBuilder()->setOption('serialize', ['data'])
+     *
+     * @param array $items Items to serialize
+     * @return void
+     * @codeCoverageIgnore
+     */
+    protected function setSerialize(array $items): void
+    {
+        $this->viewBuilder()->setOption('serialize', $items);
     }
 }

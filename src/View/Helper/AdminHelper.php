@@ -39,7 +39,7 @@ class AdminHelper extends Helper
     protected $options = [];
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function initialize(array $config): void
     {
@@ -48,7 +48,7 @@ class AdminHelper extends Helper
         $this->options = [
             'text' => [
                 'label' => false,
-                'size' => 40,
+                'size' => 25,
             ],
             'bool' => [
                 'label' => false,
@@ -93,8 +93,8 @@ class AdminHelper extends Helper
             return $this->Form->control($property, $this->options[$type] + compact('value'));
         }
 
-        if ($type === 'applications') {
-            $options = (array)$this->_View->get('applications');
+        if (in_array($type, ['applications', 'endpoints', 'roles'])) {
+            $options = (array)$this->_View->get($type);
 
             return $this->Form->control($property, $this->options['combo'] + compact('options', 'value'));
         }

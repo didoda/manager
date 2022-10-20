@@ -14,7 +14,9 @@
 namespace App\Test\TestCase\Controller\Model;
 
 use App\Controller\Model\ObjectTypesController;
+use BEdita\SDK\BEditaClient;
 use BEdita\WebTools\ApiClientProvider;
+use Cake\Core\Configure;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
@@ -28,20 +30,70 @@ use Cake\TestSuite\TestCase;
 class ObjectTypesControllerTest extends TestCase
 {
     /**
+     * The original API client (not mocked).
+     *
+     * @var \BEdita\SDK\BEditaClient
+     */
+    protected $apiClient = null;
+
+    /**
+     * @inheritDoc
+     */
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->apiClient = ApiClientProvider::getApiClient();
+        $this->loadRoutes();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function tearDown(): void
+    {
+        ApiClientProvider::setApiClient($this->apiClient);
+    }
+
+    /**
      * Test subject
      *
-     * @var \App\Controller\ModelController
+     * @var \App\Controller\Model\ObjectTypesController
      */
     public $ModelController;
 
     /**
-     * Test request config
+     * Client API
+     *
+     * @var \BEdita\SDK\BEditaClient
+     */
+    public $client;
+
+    /**
+     * Test default request config
      *
      * @var array
      */
     public $defaultRequestConfig = [
         'environment' => [
             'REQUEST_METHOD' => 'GET',
+        ],
+        'params' => [
+            'resource_type' => 'object_types',
+        ],
+    ];
+
+    /**
+     * Test `save` request config
+     *
+     * @var array
+     */
+    public $saveRequestConfig = [
+        'environment' => [
+            'REQUEST_METHOD' => 'POST',
+        ],
+        'post' => [
+            'prop_name' => 'my_prop',
+            'prop_type' => 'datetime',
         ],
         'params' => [
             'resource_type' => 'object_types',
@@ -86,12 +138,12 @@ class ObjectTypesControllerTest extends TestCase
     public function testView(): void
     {
         $this->setupController();
-        $this->ModelController->view(1);
-        $vars = ['resource', 'schema', 'properties'];
+        $this->ModelController->view(2);
+        $vars = ['resource', 'schema', 'properties', 'propertyTypesOptions', 'associationsOptions'];
         foreach ($vars as $var) {
-            static::assertNotEmpty($this->ModelController->viewVars[$var]);
+            static::assertNotEmpty($this->ModelController->viewBuilder()->getVar($var));
         }
-        $objectTypeProperties = $this->ModelController->viewVars['objectTypeProperties'];
+        $objectTypeProperties = $this->ModelController->viewBuilder()->getVar('objectTypeProperties');
         static::assertNotEmpty($objectTypeProperties);
         static::assertArrayHasKey('inherited', $objectTypeProperties);
         static::assertArrayHasKey('core', $objectTypeProperties);
@@ -102,7 +154,6 @@ class ObjectTypesControllerTest extends TestCase
      * Test `view` failure method
      *
      * @covers ::view()
-     *
      * @return void
      */
     public function testViewFail(): void
@@ -110,5 +161,139 @@ class ObjectTypesControllerTest extends TestCase
         $this->setupController();
         $result = $this->ModelController->view(0);
         static::assertTrue(($result instanceof Response));
+    }
+
+    /**
+     * Test `updateSchema`
+     *
+     * @return void
+     * @covers ::updateSchema()
+     */
+    public function testUpdateSchema(): void
+    {
+        $this->setupController();
+        $expected = $schema = ['whatever'];
+        $resource = ['meta' => ['core_type' => true]];
+        $reflectionClass = new \ReflectionClass($this->ModelController);
+        $method = $reflectionClass->getMethod('updateSchema');
+        $method->setAccessible(true);
+        $actual = $method->invokeArgs($this->ModelController, [$schema, $resource]);
+        static::assertSame($expected, $actual);
+
+        $resource = ['meta' => ['core_type' => false]];
+        $expected = [
+            'whatever',
+            'properties' => [
+                'table' => [
+                    'type' => 'string',
+                    'enum' => [
+                        'BEdita/Core.Folders',
+                        'BEdita/Core.Links',
+                        'BEdita/Core.Locations',
+                        'BEdita/Core.Media',
+                        'BEdita/Core.Objects',
+                        'BEdita/Core.Profiles',
+                        'BEdita/Core.Publications',
+                        'BEdita/Core.Users',
+                    ],
+                ],
+                'parent_name' => [
+                    'type' => 'string',
+                    'enum' => [
+                        '',
+                        'media',
+                        'objects',
+                    ],
+                ],
+            ],
+        ];
+        $actual = $method->invokeArgs($this->ModelController, [$schema, $resource]);
+        static::assertSame($expected, $actual);
+    }
+
+    /**
+     * Test `save` method
+     *
+     * @covers ::save()
+     * @covers ::addCustomProperty()
+     * @return void
+     */
+    public function testSave(): void
+    {
+        $this->saveApiMock();
+        $controller = new ObjectTypesController(
+            new ServerRequest($this->saveRequestConfig)
+        );
+        $controller->save();
+
+        $data = $controller->getRequest()->getData();
+        static::assertArrayNotHasKey('prop_name', $data);
+        static::assertArrayNotHasKey('prop_type', $data);
+    }
+
+    /**
+     * Test `save` method with empty data
+     *
+     * @covers ::addCustomProperty()
+     * @return void
+     */
+    public function testSaveEmpty(): void
+    {
+        $this->saveApiMock();
+        $config = $this->saveRequestConfig;
+        $config['post'] = ['prop_name' => '', 'prop_type' => ''];
+        $controller = new ObjectTypesController(new ServerRequest($config));
+        $controller->save();
+
+        $data = $controller->getRequest()->getData();
+        static::assertArrayNotHasKey('prop_name', $data);
+        static::assertArrayNotHasKey('prop_type', $data);
+    }
+
+    /**
+     * API client mock for save action
+     *
+     * @return void
+     */
+    protected function saveApiMock(): void
+    {
+        // Setup mock API client.
+        $apiClient = $this->getMockBuilder(BEditaClient::class)
+            ->setConstructorArgs(['https://api.example.org'])
+            ->getMock();
+        $apiClient->method('post')
+            ->withAnyParameters()
+            ->willReturn(['data' => ['id' => '1']]);
+
+        ApiClientProvider::setApiClient($apiClient);
+    }
+
+    /**
+     * Test `tables`
+     *
+     * @return void
+     * @covers ::tables()
+     */
+    public function testTables(): void
+    {
+        $testTables = ['Dummy.Cats', 'Dummy.Dogs', 'Dummy.Horses'];
+        Configure::write(
+            'Model',
+            array_merge(
+                (array)Configure::read('Model'),
+                [
+                    'objectTypesTables' => $testTables,
+                ],
+            )
+        );
+        $expected = array_unique(array_merge(ObjectTypesController::TABLES, $testTables));
+        $expected = array_unique(array_merge($expected, ['dummy']));
+        sort($expected);
+        $this->setupController();
+        $reflectionClass = new \ReflectionClass($this->ModelController);
+        $method = $reflectionClass->getMethod('tables');
+        $method->setAccessible(true);
+        $actual = $method->invokeArgs($this->ModelController, [['attributes' => ['table' => 'dummy']]]);
+        static::assertSame($expected, $actual);
     }
 }

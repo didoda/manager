@@ -25,7 +25,7 @@ class SchemaComponentTest extends TestCase
     public $Schema;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function setUp(): void
     {
@@ -34,11 +34,13 @@ class SchemaComponentTest extends TestCase
         $controller = new Controller();
         $registry = $controller->components();
         $registry->load('Auth');
-        $this->Schema = $registry->load(SchemaComponent::class);
+        /** @var \App\Controller\Component\SchemaComponent $schemaComponent */
+        $schemaComponent = $registry->load(SchemaComponent::class);
+        $this->Schema = $schemaComponent;
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function tearDown(): void
     {
@@ -108,7 +110,6 @@ class SchemaComponentTest extends TestCase
      * @param string|null $type Type to get schema for.
      * @param array $config Component configuration.
      * @return void
-     *
      * @dataProvider getSchemaProvider()
      * @covers ::fetchSchema()
      * @covers ::getSchema()
@@ -229,12 +230,12 @@ class SchemaComponentTest extends TestCase
         $schema = $this->Schema->getSchema($type);
         $revision = $schema['revision'];
 
-        // false
+        // null
         $reflectionClass = new \ReflectionClass($this->Schema);
         $method = $reflectionClass->getMethod('loadWithRevision');
         $method->setAccessible(true);
         $actual = $method->invokeArgs($this->Schema, [$type, $revision]);
-        static::assertFalse($actual);
+        static::assertNull($actual);
 
         // from cache
         Cache::enable();
@@ -249,7 +250,7 @@ class SchemaComponentTest extends TestCase
 
         // wrong revision
         $actual = $method->invokeArgs($this->Schema, [$type, '123456789']);
-        static::assertFalse($actual);
+        static::assertNull($actual);
 
         // disable cache
         Cache::disable();
@@ -369,7 +370,7 @@ class SchemaComponentTest extends TestCase
         $result = $this->Schema->getRelationsSchema();
         static::assertEmpty($result);
 
-        $message = $this->Schema->getController()->request->getSession()->read('Flash.flash.0.message');
+        $message = $this->Schema->getController()->getRequest()->getSession()->read('Flash.flash.0.message');
         static::assertEquals('Client Exception', $message);
     }
 
@@ -392,9 +393,9 @@ class SchemaComponentTest extends TestCase
                 ['documents', 'events'],
             ],
             'types + descendants' => [
-                ['documents', 'events'],
-                ['documents' => ['dummy_docs', 'serious_docs']],
-                ['dummy_docs', 'events', 'serious_docs'],
+                ['documents', 'events', 'media', 'profiles', 'videos'],
+                ['media' => ['audio', 'files', 'images', 'videos']],
+                ['audio', 'documents', 'events', 'files', 'images', 'profiles', 'videos'],
             ],
         ];
     }
@@ -605,7 +606,6 @@ class SchemaComponentTest extends TestCase
      * Test `descendants` method on abstract type
      *
      * @covers ::descendants()
-     *
      * @return void
      */
     public function testDescendants(): void
@@ -710,5 +710,17 @@ class SchemaComponentTest extends TestCase
         Cache::clearAll();
         $result = $this->Schema->objectTypesFeatures();
         static::assertEmpty($result);
+    }
+
+    /**
+     * Test `abstractTypes`
+     *
+     * @return void
+     * @covers ::abstractTypes()
+     */
+    public function testAbstractTypes(): void
+    {
+        $actual = $this->Schema->abstractTypes();
+        static::assertIsArray($actual);
     }
 }

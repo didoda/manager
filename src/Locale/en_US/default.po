@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: BEdita 4 \n"
-"POT-Creation-Date: 2021-12-22 09:11:33 \n"
+"POT-Creation-Date: 2022-09-22 16:03:10 \n"
 "PO-Revision-Date:  \n"
 "Last-Translator:  \n"
 "Language-Team: BEdita I18N & I10N Team \n"
@@ -23,6 +23,9 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
+msgid "Add custom property"
+msgstr ""
+
 msgid "Add translation"
 msgstr ""
 
@@ -30,6 +33,12 @@ msgid "Administration"
 msgstr ""
 
 msgid "Advanced"
+msgstr ""
+
+msgid "Advanced Data"
+msgstr ""
+
+msgid "Alert Message"
 msgstr ""
 
 msgid "Alert!"
@@ -41,9 +50,6 @@ msgstr ""
 msgid "All Types"
 msgstr ""
 
-msgid "All categories"
-msgstr ""
-
 msgid "All day"
 msgstr ""
 
@@ -53,13 +59,13 @@ msgstr ""
 msgid "All objects"
 msgstr ""
 
-msgid "All tags"
-msgstr ""
-
 msgid "An extension stopped the file upload"
 msgstr ""
 
 msgid "Any"
+msgstr ""
+
+msgid "Appearance"
 msgstr ""
 
 msgid "Applications"
@@ -78,6 +84,9 @@ msgid "BEdita Web site"
 msgstr ""
 
 msgid "Back to login"
+msgstr ""
+
+msgid "Bad configuration key \"{0}\""
 msgstr ""
 
 msgid "Bad related data method"
@@ -143,6 +152,9 @@ msgstr ""
 msgid "Config"
 msgstr ""
 
+msgid "Configuration key"
+msgstr ""
+
 msgid "Confirm new password"
 msgstr ""
 
@@ -162,6 +174,9 @@ msgid "Create"
 msgstr ""
 
 msgid "Create a new category"
+msgstr ""
+
+msgid "Create a new tag"
 msgstr ""
 
 msgid "Create new"
@@ -260,6 +275,9 @@ msgstr ""
 msgid "Events"
 msgstr ""
 
+msgid "Expired"
+msgstr ""
+
 msgid "Export"
 msgstr ""
 
@@ -305,13 +323,19 @@ msgstr ""
 msgid "From"
 msgstr ""
 
-msgid "From date"
+msgid "Future"
 msgstr ""
 
 msgid "Gender"
 msgstr ""
 
+msgid "General"
+msgstr ""
+
 msgid "Global"
+msgstr ""
+
+msgid "Hidden"
 msgstr ""
 
 msgid "History"
@@ -354,6 +378,9 @@ msgid "Job {0} to import file \"{1}\" scheduled."
 msgstr ""
 
 msgid "Jobs"
+msgstr ""
+
+msgid "Label"
 msgstr ""
 
 msgid "Language"
@@ -416,6 +443,9 @@ msgstr ""
 msgid "Module access not authorized"
 msgstr ""
 
+msgid "Modules"
+msgstr ""
+
 msgid "More"
 msgstr ""
 
@@ -456,6 +486,15 @@ msgid "No"
 msgstr ""
 
 msgid "No application"
+msgstr ""
+
+msgid "No core properties"
+msgstr ""
+
+msgid "No custom properties"
+msgstr ""
+
+msgid "No inherited properties"
 msgstr ""
 
 msgid "No items found"
@@ -515,6 +554,9 @@ msgstr ""
 msgid "Open"
 msgstr ""
 
+msgid "Open File"
+msgstr ""
+
 msgid "Open image"
 msgstr ""
 
@@ -524,10 +566,19 @@ msgstr ""
 msgid "Options"
 msgstr ""
 
+msgid "Original"
+msgstr ""
+
+msgid "Original language"
+msgstr ""
+
 msgid "Other"
 msgstr ""
 
-msgid "Password"
+msgid "Pagination"
+msgstr ""
+
+msgid "Parent"
 msgstr ""
 
 msgid "Password Modified"
@@ -566,6 +617,12 @@ msgstr ""
 msgid "Profiles"
 msgstr ""
 
+msgid "Project"
+msgstr ""
+
+msgid "Properties"
+msgstr ""
+
 msgid "Property Types"
 msgstr ""
 
@@ -585,6 +642,15 @@ msgid "Publish End"
 msgstr ""
 
 msgid "Publish Start"
+msgstr ""
+
+msgid "Publishing properties"
+msgstr ""
+
+msgid "Read"
+msgstr ""
+
+msgid "Recovery Mode - Access restricted to admin users"
 msgstr ""
 
 msgid "Relations"
@@ -620,6 +686,9 @@ msgstr ""
 msgid "Result"
 msgstr ""
 
+msgid "Return to Dashboard"
+msgstr ""
+
 msgid "Retype password"
 msgstr ""
 
@@ -627,6 +696,12 @@ msgid "Right types"
 msgstr ""
 
 msgid "Roles"
+msgstr ""
+
+msgid "Roles Modules"
+msgstr ""
+
+msgid "Roles Modules accesses"
 msgstr ""
 
 msgid "Save"
@@ -638,13 +713,22 @@ msgstr ""
 msgid "Search"
 msgstr ""
 
+msgid "See Wiki for help"
+msgstr ""
+
 msgid "Select a project"
 msgstr ""
 
 msgid "Sign in"
 msgstr ""
 
+msgid "Sign in with {0}"
+msgstr ""
+
 msgid "Size"
+msgstr ""
+
+msgid "Sorry, your browser does not support embedded {0} element"
 msgstr ""
 
 msgid "State Name"
@@ -668,6 +752,9 @@ msgstr ""
 msgid "System users"
 msgstr ""
 
+msgid "Tags"
+msgstr ""
+
 msgid "Temporary folder missing"
 msgstr ""
 
@@ -687,9 +774,6 @@ msgid "Thumbnail is not ready"
 msgstr ""
 
 msgid "To"
-msgstr ""
-
-msgid "To date"
 msgstr ""
 
 msgid "Translated object"
@@ -764,9 +848,6 @@ msgstr ""
 msgid "Videos"
 msgstr ""
 
-msgid "View"
-msgstr ""
-
 msgid "View file"
 msgstr ""
 
@@ -774,6 +855,9 @@ msgid "View original"
 msgstr ""
 
 msgid "Website"
+msgstr ""
+
+msgid "Write"
 msgstr ""
 
 msgid "Yes"
@@ -796,6 +880,9 @@ msgstr ""
 
 msgid "add objects"
 msgstr ""
+
+msgid "api_key"
+msgstr "Api Key / Client ID"
 
 msgid "application id"
 msgstr ""
@@ -827,7 +914,7 @@ msgstr ""
 msgid "create"
 msgstr ""
 
-msgid "create new"
+msgid "create new for"
 msgstr ""
 
 msgid "created"
@@ -893,9 +980,6 @@ msgstr ""
 msgid "on"
 msgstr ""
 
-msgid "original"
-msgstr ""
-
 msgid "params"
 msgstr ""
 
@@ -903,9 +987,6 @@ msgid "parent"
 msgstr ""
 
 msgid "phone"
-msgstr ""
-
-msgid "related object"
 msgstr ""
 
 msgid "remove"
@@ -938,9 +1019,6 @@ msgstr ""
 msgid "to"
 msgstr ""
 
-msgid "translation of"
-msgstr ""
-
 msgid "type"
 msgstr ""
 
@@ -968,116 +1046,133 @@ msgstr ""
 msgid "warning"
 msgstr ""
 
-#: src/Template/Layout/js/app/app.js:165
-#: src/Template/Layout/js/app/components/history/history.js:111
 #, javascript-format
 msgid "Please insert a new title on \"${ title }\" clone"
 msgstr ""
 
-#: src/Template/Layout/js/app/app.js:166
-#: src/Template/Layout/js/app/components/history/history.js:112
 msgid "copy"
 msgstr ""
 
-#: src/Template/Layout/js/app/app.js:453
+msgid "Clone relations"
+msgstr ""
+
 msgid "If you confirm, this data will be gone forever. Are you sure?"
 msgstr ""
 
-#: src/Template/Layout/js/app/app.js:455
 msgid "Do you really want to trash the object?"
 msgstr ""
 
-#: src/Template/Layout/js/app/app.js:463
-#: src/Template/Layout/js/app/components/history/history.js:101
-#: src/Template/Layout/js/app/pages/admin/index.js:16
-#: src/Template/Layout/js/app/pages/model/index.js:261
-#: src/Template/Layout/js/app/pages/modules/index.js:157
-#: src/Template/Layout/js/app/pages/trash/index.js:43
+msgid "If you confirm, this resource will be gone forever. Are you sure?"
+msgstr ""
+
 msgid "yes, proceed"
 msgstr ""
 
-#: src/Template/Layout/js/app/app.js:472
 msgid "There are unsaved changes, are you sure you want to leave page?"
 msgstr ""
 
-#: src/Template/Layout/js/app/pages/trash/index.js:42
 #, javascript-format
 msgid "Do you confirm the deletion of ${ number } item from the trash?"
 msgstr ""
 
-#: src/Template/Layout/js/app/pages/modules/index.js:155
 #, javascript-format
 msgid "Moving ${ number } item(s) to trash. Are you sure?"
 msgstr ""
 
-#: src/Template/Layout/js/app/pages/model/index.js:261
 #, javascript-format
 msgid "Do you really want to trash these property types? ${ types }"
 msgstr ""
 
-#: src/Template/Layout/js/app/pages/admin/index.js:14
 msgid "Remove item. Are you sure?"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/drop-upload.js:36
+#, javascript-format
+msgid ""
+"File \"${ filename }\" too big (${ fileSizeMb } MB), please select a file "
+"less than max file size (${ maxFileSizeMb } MB)"
+msgstr ""
+
 msgid "stop"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/drop-upload.js:50
 msgid "done"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/drop-upload.js:53
 msgid "Cancelled"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/edit-relation-params.js:20
 msgid "Relation parameters"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/edit-relation-params.js:30
 msgid "In relation with"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/edit-relation-params.js:39
 msgid "Priority"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/edit-relation-params.js:57
 msgid "Cancel"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/filter-box.js:164
+msgid "Mail to"
+msgstr ""
+
 msgid "Items"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/filter-box.js:317
 msgid "Search text too short. Minimum length is 3. Retry"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/tree-view/tree-view.js:68
+msgid "Open Uri"
+msgstr ""
+
+msgid "Uri is valid"
+msgstr ""
+
+msgid "Uri is not valid"
+msgstr ""
+
 msgid "edit"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/tree-view/tree-view.js:81
 msgid "Menu"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/relation-view/relations-add.js:238
+msgid "Search existing tags"
+msgstr ""
+
+msgid "Add new tag"
+msgstr ""
+
+msgid "copied in the clipboard"
+msgstr ""
+
 #, javascript-format
 msgid "Missing required data \"${ required }\". Retry"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/relation-view/relations-add.js:293
 msgid "Error while creating new object."
+msgstr ""
+
+msgid "Inherited from"
+msgstr ""
+
+msgid "Show"
+msgstr ""
+
+msgid "Hide"
+msgstr ""
+
+msgid "Error on deleting property"
+msgstr ""
+
+msgid "Password"
 msgstr ""
 
 #. *
 #.  * <location-view> component used for ModulesPage -> View
 #.  *
 #.  * Handle Locations and reverse geocoding from addresses
-#.  
-#: src/Template/Layout/js/app/components/locations-view/location-view.js:51
+#.
 msgid "Title"
 msgstr ""
 
@@ -1085,8 +1180,7 @@ msgstr ""
 #.  * <location-view> component used for ModulesPage -> View
 #.  *
 #.  * Handle Locations and reverse geocoding from addresses
-#.  
-#: src/Template/Layout/js/app/components/locations-view/location-view.js:70
+#.
 msgid "Address"
 msgstr ""
 
@@ -1094,8 +1188,7 @@ msgstr ""
 #.  * <location-view> component used for ModulesPage -> View
 #.  *
 #.  * Handle Locations and reverse geocoding from addresses
-#.  
-#: src/Template/Layout/js/app/components/locations-view/location-view.js:95
+#.
 msgid "GET"
 msgstr ""
 
@@ -1106,41 +1199,129 @@ msgstr ""
 #.  * <locations-view> component used for ModulesPage -> View
 #.  *
 #.  * Handle Locations and reverse geocoding from addresses
-#.  
-#: src/Template/Layout/js/app/components/locations-view/locations-view.js:30
+#.
 msgid "add new"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/history/history-info.js:10
 msgid "version by"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/history/history-info.js:12
 msgid "date"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/history/history-info.js:18
 msgid "Trashed"
 msgstr ""
 
 #. *
 #.  * Component to fetch and display changes' history.
-#.  
-#: src/Template/Layout/js/app/components/history/history.js:31
+#.
 msgid "No History data found"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/history/history.js:58
 #, javascript-format
 msgid "by ${ name } via ${ application }"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/history/history.js:60
 msgid "by ${ name }"
 msgstr ""
 
-#: src/Template/Layout/js/app/components/history/history.js:100
 msgid ""
 "Restored data will replace current data (you can still check the data before "
 "saving). Are you sure?"
+msgstr ""
+
+#. *
+#.  * Templates that uses this component (directly or indirectly):
+#.  *  Template/Elements/calendar.twig
+#.  *
+#.  * <date-ranges-view> component used for ModulesPage -> View
+#.
+msgid "Every day"
+msgstr ""
+
+#. *
+#.  * Templates that uses this component (directly or indirectly):
+#.  *  Template/Elements/calendar.twig
+#.  *
+#.  * <date-ranges-view> component used for ModulesPage -> View
+#.
+msgid "Sunday"
+msgstr ""
+
+#. *
+#.  * Templates that uses this component (directly or indirectly):
+#.  *  Template/Elements/calendar.twig
+#.  *
+#.  * <date-ranges-view> component used for ModulesPage -> View
+#.
+msgid "Monday"
+msgstr ""
+
+#. *
+#.  * Templates that uses this component (directly or indirectly):
+#.  *  Template/Elements/calendar.twig
+#.  *
+#.  * <date-ranges-view> component used for ModulesPage -> View
+#.
+msgid "Tuesday"
+msgstr ""
+
+#. *
+#.  * Templates that uses this component (directly or indirectly):
+#.  *  Template/Elements/calendar.twig
+#.  *
+#.  * <date-ranges-view> component used for ModulesPage -> View
+#.
+msgid "Wednesday"
+msgstr ""
+
+#. *
+#.  * Templates that uses this component (directly or indirectly):
+#.  *  Template/Elements/calendar.twig
+#.  *
+#.  * <date-ranges-view> component used for ModulesPage -> View
+#.
+msgid "Thursday"
+msgstr ""
+
+#. *
+#.  * Templates that uses this component (directly or indirectly):
+#.  *  Template/Elements/calendar.twig
+#.  *
+#.  * <date-ranges-view> component used for ModulesPage -> View
+#.
+msgid "Friday"
+msgstr ""
+
+#. *
+#.  * Templates that uses this component (directly or indirectly):
+#.  *  Template/Elements/calendar.twig
+#.  *
+#.  * <date-ranges-view> component used for ModulesPage -> View
+#.
+msgid "Saturday"
+msgstr ""
+
+#. *
+#.  * Templates that uses this component (directly or indirectly):
+#.  *  Template/Elements/calendar.twig
+#.  *
+#.  * <date-ranges-view> component used for ModulesPage -> View
+#.
+msgid "Invalid date range"
+msgstr ""
+
+msgid "Modify"
+msgstr ""
+
+msgid "Name already in use"
+msgstr ""
+
+msgid "Error while creating new category"
+msgstr ""
+
+msgid "Error while saving category"
+msgstr ""
+
+msgid "Error on deleting category"
 msgstr ""

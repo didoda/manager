@@ -27,13 +27,12 @@ class PluginTest extends TestCase
      * Test loaded app plugins
      *
      * @return void
-     *
      * @covers ::loadedAppPlugins()
      */
     public function testLoadedAppPlugins(): void
     {
         $expected = Configure::read('Plugins', []);
-        $expected = array_keys($expected) + ['IdeHelper'];
+        $expected = array_keys($expected);
         sort($expected);
         $loaded = Plugin::loadedAppPlugins();
         static::assertEquals($expected, $loaded);

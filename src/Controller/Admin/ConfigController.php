@@ -1,7 +1,18 @@
 <?php
+/**
+ * BEdita, API-first content management framework
+ * Copyright 2022 Atlas Srl, Chialab Srl
+ *
+ * This file is part of BEdita: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * See LICENSE.LGPL or <http://gnu.org/licenses/lgpl-3.0.html> for more details.
+ */
 namespace App\Controller\Admin;
 
-use Cake\Event\Event;
+use Cake\Event\EventInterface;
 use Cake\Http\Response;
 use Cake\Utility\Hash;
 
@@ -20,19 +31,24 @@ class ConfigController extends AdministrationBaseController
     protected $resourceType = 'config';
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     protected $readonly = false;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    protected $properties = ['name', 'context', 'json' => 'content', 'applications' => 'application_id'];
+    protected $properties = [
+        'name' => 'string',
+        'context' => 'string',
+        'content' => 'json',
+        'application_id' => 'applications',
+    ];
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function beforeFilter(Event $event): ?Response
+    public function beforeFilter(EventInterface $event): ?Response
     {
         parent::beforeFilter($event);
         $response = $this->apiClient->get('/admin/applications', ['filter' => ['enabled' => 1]]);

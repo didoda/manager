@@ -1,16 +1,20 @@
 # BEdita Manager
 
-[![Github Actions](https://github.com/bedita/manager/workflows/php/badge.svg)](https://github.com/bedita/manager/actions?query=workflow%3Aphp)
-[![Github Actions](https://github.com/bedita/manager/workflows/javascript/badge.svg)](https://github.com/bedita/manager/actions?query=workflow%3Ajavascript)
+[![Github Actions PHP](https://github.com/bedita/manager/workflows/php/badge.svg)](https://github.com/bedita/manager/actions?query=workflow%3Aphp)
+[![Github Actions Javascript](https://github.com/bedita/manager/workflows/javascript/badge.svg)](https://github.com/bedita/manager/actions?query=workflow%3Ajavascript)
+[![codecov](https://codecov.io/gh/bedita/manager/branch/master/graph/badge.svg)](https://codecov.io/gh/bedita/manager)
+[![phpstan](https://img.shields.io/badge/PHPStan-level%205-brightgreen.svg)](https://phpstan.org)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/bedita/manager/badges/quality-score.png)](https://scrutinizer-ci.com/g/bedita/manager/)
+[![Version](https://img.shields.io/packagist/v/bedita/manager.svg?label=stable)](https://packagist.org/packages/bedita/manager)
+[![License](https://img.shields.io/badge/License-LGPL_v3-orange.svg)](https://github.com/bedita/manager/blob/master/LICENSE.LGPL)
 
 <!-- [![Code Coverage](https://codecov.io/gh/bedita/manager/branch/master/graph/badge.svg)](https://codecov.io/gh/bedita/bedita/branch/master) -->
 
-Official Backend Admin WebApp for [BEdita4 API](https://gihub.com/bedita/bedita).
+Official Backend Admin WebApp for [BEdita4 and BEdita5 API](https://gihub.com/bedita/bedita).
 
 ## Prerequisites
 
-* [PHP](https://www.php.net/) >= 7.1
+* [PHP](https://www.php.net/) 7.4, 8.0 and 8.1
 * [Composer](https://getcomposer.org/doc/00-intro.md#installation-linux-unix-osx)
 * [Node](https://nodejs.org) 14 or 16
 * [Yarn](https://yarnpkg.com) >= 1.15
@@ -52,6 +56,12 @@ bin/cake server
 And then point your browser to `http://localhost:8765/`
 
 For any other use than a simple test we recommend to configure your preferred web server like Nginx/Apache and point to `webroot/` as vhost document root.
+
+## Configuration
+
+You can further configure your BEdita Manager instance in `config/app_local.php` with environment and project specific settings.
+
+Have look at the main [Manager configuration wiki page](https://github.com/bedita/manager/wiki/Manager-App-Configuration) on how to customize your Manager instance.
 
 ## Docker
 
@@ -127,7 +137,7 @@ yarn run eslint src/Template/Layout/js/app/pages/admin/index.js
 
 ## Run unit tests
 
-To setup tests locally simply copy `tests/.env.default` to `tests/.env` and set env vars accordingly.
+To setup tests locally simply copy `tests/.env.example` to `tests/.env` and set env vars accordingly.
 To launch tests:
 
 ```bash
@@ -135,12 +145,12 @@ vendors/bin/phpunit [test folder or file, default '/tests']
 ```
 
 To run those tests you may want to use a Docker image as BEdita4 API endpoint.
-For instance if you can pull a Docker image via ```docker pull bedita/bedita:4.6.1```
+For instance if you can pull a Docker image via ```docker pull bedita/bedita:4.7.1```
 
 Then you may run the image with
 
 ```bash
-docker run -p 8090:80 --env BEDITA_ADMIN_USR=bedita --env BEDITA_ADMIN_PWD=bedita bedita/bedita:4.6.1
+docker run -p 8090:80 --env BEDITA_ADMIN_USR=bedita --env BEDITA_ADMIN_PWD=bedita bedita/bedita:4.7.1
 ```
 
 You can then set env vars accordingly like this:

@@ -12,8 +12,11 @@ import Vue from 'vue';
 export default {
     components: {
         CoordinatesView: () => import(/* webpackChunkName: "coordinates-view" */'app/components/coordinates-view'),
+        TagPicker: () => import(/* webpackChunkName: "tag-picker" */'app/components/tag-picker/tag-picker'),
         PropertyView: () => import(/* webpackChunkName: "property-view" */'app/components/property-view/property-view'),
         HorizontalTabView: () => import(/* webpackChunkName: "horizontal-tab-view" */'app/components/horizontal-tab-view'),
+        ObjectProperty: () => import(/* webpackChunkName: "object-property" */'app/components/object-property/object-property'),
+        ObjectTypesList: () => import(/* webpackChunkName: "object-types-list" */'app/components/object-types-list/object-types-list'),
     },
 
     props: {
@@ -33,7 +36,9 @@ export default {
 
     mounted() {
         window.addEventListener('keydown', this.toggleTabs);
-        this.$refs.formMain.addEventListener('submit', this.submitForm);
+        if (this.$refs.formMain) {
+            this.$refs.formMain.addEventListener('submit', this.submitForm);
+        }
     },
 
     methods: {
@@ -53,6 +58,8 @@ export default {
                 return;
             }
 
+            const button = document.querySelector('button[form=form-main]');
+            button.classList.add('is-loading-spinner');
             const formData = new FormData(event.target);
             const action = event.target.getAttribute('action');
 
@@ -68,6 +75,7 @@ export default {
                 credentials: 'same-origin',
                 redirect: 'manual',
             }).then(async (response) => {
+                button.classList.remove('is-loading-spinner');
                 if (!response.ok) {
                     // a redirect was performed; we assume it was to /login page
                     if (response.status === 0 && response.type === 'opaqueredirect') {
@@ -81,9 +89,16 @@ export default {
                     throw new Error(error);
                 }
 
-                const json = await response.json();
-                if (json.error) {
+                let json;
+                try {
+                    json = await response.json();
+                } catch (e) {
+                    console.error('Malformed json response on save');
+                    window.location.reload();
+                }
+                if (json?.error) {
                     await this.showFlashMessages();
+                    BEDITA.error(json.error);
                     throw new Error(json.error);
                 }
 

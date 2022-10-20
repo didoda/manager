@@ -2,11 +2,10 @@
 
 namespace App\Core\Result;
 
-use App\Core\Result\Result;
-
 /**
+ * {@inheritDoc}
+ *
  * Import result class
- * @extends App\Core\Result\Result
  */
 class ImportResult extends Result
 {

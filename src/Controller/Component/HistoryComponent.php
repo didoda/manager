@@ -1,4 +1,15 @@
 <?php
+/**
+ * BEdita, API-first content management framework
+ * Copyright 2022 Atlas Srl, Chialab Srl
+ *
+ * This file is part of BEdita: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * See LICENSE.LGPL or <http://gnu.org/licenses/lgpl-3.0.html> for more details.
+ */
 namespace App\Controller\Component;
 
 use App\Utility\Applications;
@@ -54,7 +65,7 @@ class HistoryComponent extends Component
             return;
         }
         $key = sprintf($this->key, $id);
-        $session = $this->getController()->request->getSession();
+        $session = $this->getController()->getRequest()->getSession();
         $data = (string)$session->read($key);
         if (empty($data)) {
             return;
@@ -126,12 +137,12 @@ class HistoryComponent extends Component
         // if keep uname, recover it from object
         if ($keepUname) {
             $response = $ApiClient->getObject($id, $objectType);
-            $attributes['uname'] = Hash::get($response, 'data.attributes.uname');
+            $attributes['uname'] = Hash::get((array)$response, 'data.attributes.uname');
         }
 
         // write attributes into session
         $key = sprintf($this->key, $id);
-        $session = $this->getController()->request->getSession();
+        $session = $this->getController()->getRequest()->getSession();
         $session->write($key, json_encode($attributes));
     }
 
@@ -165,7 +176,7 @@ class HistoryComponent extends Component
         }
         $data = Hash::get($response, 'data');
         foreach ($data as &$history) {
-            $changed = Hash::get($history, 'meta.changed');
+            $changed = (array)Hash::get($history, 'meta.changed');
             $formatted = [];
             foreach ($changed as $field => $value) {
                 $label = $this->label($field);

@@ -1,7 +1,7 @@
 <?php
 /**
  * BEdita, API-first content management framework
- * Copyright 2019 ChannelWeb Srl, Chialab Srl
+ * Copyright 2022 ChannelWeb Srl, Chialab Srl
  *
  * This file is part of BEdita: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published
@@ -12,28 +12,39 @@
  */
 namespace App;
 
+use App\Identifier\ApiIdentifier;
+use App\Middleware\ConfigurationMiddleware;
 use App\Middleware\ProjectMiddleware;
+use App\Middleware\RecoveryMiddleware;
+use App\Middleware\StatusMiddleware;
+use Authentication\AuthenticationService;
+use Authentication\AuthenticationServiceInterface;
+use Authentication\AuthenticationServiceProviderInterface;
+use Authentication\Identifier\IdentifierInterface;
+use Authentication\Middleware\AuthenticationMiddleware;
 use BEdita\I18n\Middleware\I18nMiddleware;
-use BEdita\WebTools\BaseApplication;
+use BEdita\WebTools\Middleware\OAuth2Middleware;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
 use Cake\Error\Middleware\ErrorHandlerMiddleware;
-use Cake\Http\MiddlewareQueue;
+use Cake\Http\BaseApplication;
 use Cake\Http\Middleware\CsrfProtectionMiddleware;
+use Cake\Http\MiddlewareQueue;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Application class.
  */
-class Application extends BaseApplication
+class Application extends BaseApplication implements AuthenticationServiceProviderInterface
 {
     /**
      * Default plugin options
      *
      * @var array
      */
-    const PLUGIN_DEFAULTS = [
+    protected const PLUGIN_DEFAULTS = [
         'debugOnly' => false,
         'autoload' => false,
         'bootstrap' => true,
@@ -42,41 +53,40 @@ class Application extends BaseApplication
     ];
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function bootstrap(): void
     {
         parent::bootstrap();
-        $this->addPlugin('BEdita/WebTools', ['bootstrap' => true]);
+
+        if (PHP_SAPI === 'cli') {
+            $this->bootstrapCli();
+        }
+
+        /*
+         * Only try to load DebugKit in development mode
+         * Debug Kit should not be installed on a production system
+         */
+        if (Configure::read('debug')) {
+            $this->addOptionalPlugin('DebugKit');
+        }
+
+        $this->addPlugin('BEdita/WebTools');
+        $this->addPlugin('BEdita/I18n');
+        $this->addPlugin('Authentication');
     }
 
     /**
+     * Load CLI plugins
+     *
      * @return void
      */
     protected function bootstrapCli(): void
     {
-        parent::bootstrapCli();
-        $this->addPluginDev('IdeHelper');
-        $this->addPlugin('BEdita/I18n');
+        $this->addOptionalPlugin('Bake');
+        $this->addOptionalPlugin('IdeHelper');
+        $this->addOptionalPlugin('Cake/Repl');
         $this->loadPluginsFromConfig();
-    }
-
-    /**
-     * Add plugin considered as a dev dependency.
-     * It could be missing in production env.
-     *
-     * @param string $name The plugin name
-     * @return bool
-     */
-    public function addPluginDev(string $name): bool
-    {
-        try {
-            $this->addPlugin($name);
-        } catch (\Exception $e) {
-            return false;
-        }
-
-        return true;
     }
 
     /**
@@ -90,8 +100,8 @@ class Application extends BaseApplication
     {
         $plugins = (array)Configure::read('Plugins');
         foreach ($plugins as $plugin => $options) {
-            $options = array_merge(self::PLUGIN_DEFAULTS, $options);
-            if (!$options['debugOnly'] || ($options['debugOnly'] && Configure::read('debug'))) {
+            $options = array_merge(static::PLUGIN_DEFAULTS, $options);
+            if (!$options['debugOnly'] || Configure::read('debug')) {
                 $this->addPlugin($plugin, $options);
                 $this->plugins->get($plugin)->bootstrap($this);
             }
@@ -99,18 +109,24 @@ class Application extends BaseApplication
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function middleware($middlewareQueue): MiddlewareQueue
     {
         $middlewareQueue
             // Catch any exceptions in the lower layers,
             // and make an error page/response
-            ->add(new ErrorHandlerMiddleware(null, Configure::read('Error')))
+            ->add(new ErrorHandlerMiddleware(Configure::read('Error')))
 
             // Load current project configuration if `multiproject` instance
             // Manager plugins will also be loaded here via `loadPluginsFromConfig()`
             ->add(new ProjectMiddleware($this))
+
+            // Provides a `GET /status` endpoint. This must be
+            ->add(new StatusMiddleware())
+
+            // Load configuration from API for the current project.
+            ->add(new ConfigurationMiddleware())
 
             // Handle plugin/theme assets like CakePHP normally does.
             ->add(new AssetMiddleware([
@@ -127,7 +143,16 @@ class Application extends BaseApplication
             ->add(new RoutingMiddleware($this))
 
             // Csrf Middleware
-            ->add($this->csrfMiddleware());
+            ->add($this->csrfMiddleware())
+
+            // Authentication middleware.
+            ->add(new AuthenticationMiddleware($this))
+
+            // Authentication middleware.
+            ->add(new OAuth2Middleware())
+
+            // Recovery middleware
+            ->add(new RecoveryMiddleware());
 
         return $middlewareQueue;
     }
@@ -135,14 +160,14 @@ class Application extends BaseApplication
     /**
      * Get internal Csrf Middleware
      *
-     * @return CsrfProtectionMiddleware
+     * @return \Cake\Http\Middleware\CsrfProtectionMiddleware
      */
     protected function csrfMiddleware(): CsrfProtectionMiddleware
     {
         // Csrf Middleware
-        $csrf = new CsrfProtectionMiddleware();
+        $csrf = new CsrfProtectionMiddleware(['httponly' => true]);
         // Token check will be skipped when callback returns `true`.
-        $csrf->whitelistCallback(function ($request) {
+        $csrf->skipCheckCallback(function ($request) {
             $actions = (array)Configure::read(sprintf('CsrfExceptions.%s', $request->getParam('controller')));
             // Skip token check for API URLs.
             if (in_array($request->getParam('action'), $actions)) {
@@ -170,5 +195,54 @@ class Application extends BaseApplication
             Configure::config('projects', new PhpConfig($projectsPath));
             Configure::load($project, 'projects');
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
+    {
+        $service = new AuthenticationService([
+            'unauthenticatedRedirect' => '/login',
+            'queryParam' => 'redirect',
+        ]);
+
+        $path = $request->getUri()->getPath();
+        $query = $request->getQueryParams();
+        if (strpos($path, '/ext/login') === 0) {
+            $providers = (array)Configure::read('OAuth2Providers');
+            $service->loadIdentifier('BEdita/WebTools.OAuth2', compact('providers'));
+            $service->loadAuthenticator('BEdita/WebTools.OAuth2', compact('providers') + [
+                'redirect' => ['_name' => 'login:oauth2'],
+            ]);
+
+            if (empty($query)) {
+                return $service;
+            }
+        }
+
+        $service->loadAuthenticator('Authentication.Session', [
+            'sessionKey' => 'BEditaManagerAuth',
+            'fields' => [
+                IdentifierInterface::CREDENTIAL_TOKEN => 'token',
+            ],
+        ]);
+
+        $service->loadIdentifier(ApiIdentifier::class, [
+                'timezoneField' => 'timezone',
+        ]);
+
+        if ($path === '/login') {
+            $service->loadAuthenticator('Authentication.Form', [
+                'loginUrl' => '/login',
+                'fields' => [
+                    IdentifierInterface::CREDENTIAL_USERNAME => 'username',
+                    IdentifierInterface::CREDENTIAL_PASSWORD => 'password',
+                    'timezone' => 'timezone_offset',
+                ],
+            ]);
+        }
+
+        return $service;
     }
 }

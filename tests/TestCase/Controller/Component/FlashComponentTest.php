@@ -12,9 +12,9 @@
  */
 namespace App\Test\TestCase\Controller\Component;
 
+use App\Controller\AppController;
 use App\Controller\Component\FlashComponent;
 use BEdita\SDK\BEditaClientException;
-use Cake\Controller\Controller;
 use Cake\TestSuite\TestCase;
 
 /**
@@ -34,24 +34,26 @@ class FlashComponentTest extends TestCase
     /**
      * Test controller
      *
-     * @var App\Controller\AppController
+     * @var \App\Controller\AppController
      */
     public $controller;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function setUp(): void
     {
-        $this->controller = new Controller();
+        $this->controller = new AppController();
         $registry = $this->controller->components();
-        $this->Flash = $registry->load(FlashComponent::class);
+        /** @var \App\Controller\Component\FlashComponent $component */
+        $component = $registry->load(FlashComponent::class);
+        $this->Flash = $component;
 
         parent::setUp();
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function tearDown(): void
     {
@@ -71,17 +73,16 @@ class FlashComponentTest extends TestCase
         // message without params
         $expected = 'debug';
         $this->Flash->set($expected, []);
-        $flash = $this->controller->request->getSession()->read('Flash');
+        $flash = $this->controller->getRequest()->getSession()->read('Flash');
         static::assertEquals($expected, $flash['flash'][0]['message']);
 
         // message with params exception
         $expected = 'debug';
         $expectedExceptionMessage = 'something went wrong';
         $this->Flash->set('debug', ['params' => new BEditaClientException($expectedExceptionMessage)]);
-        $flash = $this->controller->request->getSession()->read('Flash');
-        $message = $flash['flash'][0]['message'];
+        $flash = $this->controller->getRequest()->getSession()->read('Flash');
         static::assertEquals($expected, $flash['flash'][0]['message']);
-        static::assertEquals($expected, $flash['flash'][1]['message']);
-        static::assertEquals($expectedExceptionMessage, $flash['flash'][1]['params']['title']);
+        static::assertEquals($expectedExceptionMessage, $flash['flash'][0]['params']['title']);
+        static::assertEquals(503, $flash['flash'][0]['params']['status']);
     }
 }

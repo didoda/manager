@@ -28,16 +28,25 @@ use Cake\TestSuite\TestCase;
 class TrashControllerTest extends TestCase
 {
     /**
+     * @inheritDoc
+     */
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->loadRoutes();
+    }
+
+    /**
      * Test controller
      *
-     * @var App\Controller\TrashController
+     * @var \App\Controller\TrashController
      */
     public $Trash;
 
     /**
      * Test api client
      *
-     * @var BEdita\SDK\BEditaClient
+     * @var \BEdita\SDK\BEditaClient
      */
     public $client;
 
@@ -125,7 +134,6 @@ class TrashControllerTest extends TestCase
      * Test `restore` method
      *
      * @covers ::restore()
-     *
      * @return void
      */
     public function testRestore(): void
@@ -147,7 +155,6 @@ class TrashControllerTest extends TestCase
      * Test `restore` method when unauthorized
      *
      * @covers ::restore()
-     *
      * @return void
      */
     public function testRestoreUnauthorized(): void
@@ -164,7 +171,6 @@ class TrashControllerTest extends TestCase
      * Test `restore` method with multiple items
      *
      * @covers ::restore()
-     *
      * @return void
      */
     public function testRestoreMulti(): void
@@ -180,7 +186,6 @@ class TrashControllerTest extends TestCase
      * Test `restore` method failure with multiple items
      *
      * @covers ::restore()
-     *
      * @return void
      */
     public function testRestoreMultiFailure(): void
@@ -191,7 +196,7 @@ class TrashControllerTest extends TestCase
         static::assertEquals(302, $response->getStatusCode());
         static::assertEquals('/trash', $response->getHeaderLine('Location'));
 
-        $message = $this->Trash->request->getSession()->read('Flash.flash.0.message');
+        $message = $this->Trash->getRequest()->getSession()->read('Flash.flash.0.message');
         static::assertEquals('[404] Not Found', $message);
     }
 
@@ -199,7 +204,6 @@ class TrashControllerTest extends TestCase
      * Test `delete` method
      *
      * @covers ::delete()
-     *
      * @return void
      */
     public function testDelete(): void
@@ -226,7 +230,6 @@ class TrashControllerTest extends TestCase
      * Test `delete` method when unauthorized
      *
      * @covers ::delete()
-     *
      * @return void
      */
     public function testDeleteUnauthorized(): void
@@ -245,7 +248,6 @@ class TrashControllerTest extends TestCase
      * Test `restore` method with multiple items
      *
      * @covers ::delete()
-     *
      * @return void
      */
     public function testDeleteMulti(): void
@@ -263,7 +265,6 @@ class TrashControllerTest extends TestCase
      * Test `delete` method failure with multiple items
      *
      * @covers ::delete()
-     *
      * @return void
      */
     public function testDeleteMultiFailure(): void
@@ -274,22 +275,21 @@ class TrashControllerTest extends TestCase
         static::assertEquals(302, $response->getStatusCode());
         static::assertEquals('/trash', $response->getHeaderLine('Location'));
 
-        $message = $this->Trash->request->getSession()->read('Flash.flash.0.message');
+        $message = $this->Trash->getRequest()->getSession()->read('Flash.flash.0.message');
         static::assertEquals('[404] Not Found', $message);
     }
 
     /**
-     * Test `empty` method
+     * Test `emptyTrash` method
      *
-     * @covers ::empty()
+     * @covers ::emptyTrash()
      * @covers ::listQuery()
-     *
      * @return void
      */
     public function testEmpty(): void
     {
         $this->setupControllerAndData(true, false);
-        $this->Trash->empty();
+        $this->Trash->emptyTrash();
         $response = $this->client->get('/trash');
         static::assertEquals(200, $this->client->getStatusCode());
         static::assertEquals('OK', $this->client->getStatusMessage());
@@ -299,33 +299,31 @@ class TrashControllerTest extends TestCase
     }
 
     /**
-     * Test `empty` method with query filter
+     * Test `emptyTrash` method with query filter
      *
-     * @covers ::empty()
+     * @covers ::emptyTrash()
      * @covers ::listQuery()
-     *
      * @return void
      */
     public function testEmptyFilter(): void
     {
         $this->setupControllerAndData(true, true);
-        $this->Trash->empty();
+        $this->Trash->emptyTrash();
         $response = $this->client->get('/trash');
         static::assertEquals(200, $this->client->getStatusCode());
         static::assertEmpty($response['data']);
     }
 
     /**
-     * Test `empty` method when unauthorized
+     * Test `emptyTrash` method when unauthorized
      *
-     * @covers ::empty()
-     *
+     * @covers ::emptyTrash()
      * @return void
      */
     public function testEmptyUnauthorized(): void
     {
         $this->setupControllerAndData(false);
-        $this->Trash->empty();
+        $this->Trash->emptyTrash();
         $response = $this->client->get('/trash');
         static::assertEquals(200, $this->client->getStatusCode());
         static::assertEquals('OK', $this->client->getStatusMessage());

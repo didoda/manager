@@ -8,11 +8,13 @@ import 'Template/Layout/style.scss';
 import { BELoader } from 'libs/bedita';
 
 import { PanelView, PanelEvents } from 'app/components/panel-view';
-import { confirm, prompt } from 'app/components/dialog/dialog';
+import { confirm, error, info, prompt, warning } from 'app/components/dialog/dialog';
 
 import datepicker from 'app/directives/datepicker';
+import email from 'app/directives/email';
 import jsoneditor from 'app/directives/jsoneditor';
 import richeditor from 'app/directives/richeditor';
+import uri from 'app/directives/uri';
 import viewHelper from 'app/helpers/view';
 import autoTranslation from 'app/helpers/api-translation';
 import Autocomplete from '@trevoreyre/autocomplete-vue';
@@ -27,19 +29,26 @@ const _vueInstance = new Vue({
     components: {
         PanelView,
         Autocomplete,
+        LoginPassword: () => import(/* webpackChunkName: "login-password" */'app/components/login-password/login-password'),
+        Category: () => import(/* webpackChunkName: "category" */'app/components/category/category'),
         CategoryPicker: () => import(/* webpackChunkName: "category-picker" */'app/components/category-picker/category-picker'),
+        TagPicker: () => import(/* webpackChunkName: "tag-picker" */'app/components/tag-picker/tag-picker'),
         FolderPicker: () => import(/* webpackChunkName: "folder-picker" */'app/components/folder-picker/folder-picker'),
         Dashboard: () => import(/* webpackChunkName: "modules-index" */'app/pages/dashboard/index'),
         DateRangesView: () => import(/* webpackChunkName: "date-ranges-view" */'app/components/date-ranges-view/date-ranges-view'),
         DateRangesList: () => import(/* webpackChunkName: "date-ranges-list" */'app/components/date-ranges-list/date-ranges-list'),
         TreeView: () => import(/* webpackChunkName: "tree-view" */'app/components/tree-view/tree-view'),
+        IndexCell: () => import(/* webpackChunkName: "index-cell" */'app/components/index-cell/index-cell'),
         ModulesIndex: () => import(/* webpackChunkName: "modules-index" */'app/pages/modules/index'),
         ModulesView: () => import(/* webpackChunkName: "modules-view" */'app/pages/modules/view'),
+        ObjectProperty: () => import(/* webpackChunkName: "object-property" */'app/components/object-property/object-property'),
+        ObjectTypesList: () => import(/* webpackChunkName: "object-types-list" */'app/components/object-types-list/object-types-list'),
         TrashIndex: () => import(/* webpackChunkName: "trash-index" */'app/pages/trash/index'),
         TrashView: () => import(/* webpackChunkName: "trash-view" */'app/pages/trash/view'),
         ImportView: () => import(/* webpackChunkName: "import-index" */'app/pages/import/index'),
         ModelIndex: () => import(/* webpackChunkName: "model-index" */'app/pages/model/index'),
         AdminIndex: () => import(/* webpackChunkName: "admin-index" */'app/pages/admin/index'),
+        AdminAppearance: () => import(/* webpackChunkName: "admin-appearance" */'app/pages/admin/appearance'),
         RelationsAdd: () => import(/* webpackChunkName: "relations-add" */'app/components/relation-view/relations-add'),
         EditRelationParams: () => import(/* webpackChunkName: "edit-relation-params" */'app/components/edit-relation-params'),
         HistoryInfo: () => import(/* webpackChunkName: "history-info" */'app/components/history/history-info'),
@@ -48,6 +57,7 @@ const _vueInstance = new Vue({
         MainMenu: () => import(/* webpackChunkName: "menu" */'app/components/menu'),
         FlashMessage: () => import(/* webpackChunkName: "flash-message" */'app/components/flash-message'),
         CoordinatesView: () => import(/* webpackChunkName: "coordinates-view" */'app/components/coordinates-view'),
+        Secret: () => import(/* webpackChunkName: "secret" */'app/components/secret/secret'),
     },
 
     data() {
@@ -93,6 +103,8 @@ const _vueInstance = new Vue({
         Vue.use(jsoneditor);
         Vue.use(datepicker);
         Vue.use(richeditor);
+        Vue.use(email);
+        Vue.use(uri);
 
         // Register helpers
         Vue.use(viewHelper);
@@ -142,6 +154,12 @@ const _vueInstance = new Vue({
     mounted: function () {
         this.$nextTick(function () {
             this.alertBeforePageUnload(BEDITA.template);
+            // register functions in BEDITA to make them reusable in plugins
+            BEDITA.confirm = confirm;
+            BEDITA.error = error;
+            BEDITA.info = info;
+            BEDITA.prompt = prompt;
+            BEDITA.warning = warning;
         });
     },
 
@@ -166,16 +184,18 @@ const _vueInstance = new Vue({
             const title = document.getElementById('title').value || t('Untitled');
             const msg = t`Please insert a new title on "${title}" clone`;
             const defaultTitle = title + '-' + t`copy`;
-
-            prompt(msg, defaultTitle, (cloneTitle, dialog) => {
-                const query = `?title=${cloneTitle || defaultTitle}`;
+            const confirmCallback = (cloneTitle, cloneRelations, dialog) => {
+                const query = `?title=${cloneTitle || defaultTitle}&cloneRelations=${cloneRelations || false}`;
                 const origin = window.location.origin;
                 const path = window.location.pathname.replace('/view/', '/clone/');
                 const url = `${origin}${path}${query}`;
                 const newTab = window.open(url, '_blank');
                 newTab.focus();
                 dialog.hide(true);
-            });
+            };
+            const options = { checkLabel: t`Clone relations`, checkValue: false };
+
+            prompt(msg, defaultTitle, confirmCallback, document.body, options);
         },
 
         /**
@@ -337,6 +357,13 @@ const _vueInstance = new Vue({
          * @returns {void}
          */
         applyFilters(filters) {
+            if (filters?.filter?.type) {
+                delete filters.filter.type;
+            }
+            if (this.selectedTypes.length > 0) {
+                const typesFilter = {type: this.selectedTypes};
+                filters.filter = {...filters.filter, ...typesFilter};
+            }
             const url = this.buildUrlWithParams({
                 q: filters.q,
                 filter: filters.filter,
@@ -441,7 +468,7 @@ const _vueInstance = new Vue({
             });
 
             /**
-            * Listen for submit: if action is /delete it shows warning dialog
+            * Listen for submit: if action is "delete" it shows warning dialog
             */
             this.$el.addEventListener('submit', (ev) => {
                 ev.preventDefault();
@@ -450,11 +477,37 @@ const _vueInstance = new Vue({
                     return;
                 }
 
+                const trashActions = [
+                    '/trash/delete',
+                    '/trash/empty',
+                ];
+
                 let msg = '';
-                if (form.action.endsWith('/trash/delete') || form.action.endsWith('/trash/empty')) {
-                    msg = t`If you confirm, this data will be gone forever. Are you sure?`;
-                } else if (form.action.endsWith('/delete')) {
-                    msg = t`Do you really want to trash the object?`;
+                let done = false;
+                for (const action of trashActions) {
+                    if (!done && form.action.includes(action)) {
+                        msg = t`If you confirm, this data will be gone forever. Are you sure?`;
+                        done = true;
+                    }
+                }
+                if (!done) {
+                    const hardDeleteActions = [
+                        '/delete',
+                        '/model/object_types/remove',
+                        '/model/relations/remove',
+                        '/model/tags/remove',
+                        '/model/categories/remove',
+                    ];
+                    for (const action of hardDeleteActions) {
+                        if (!done && form.action.includes(action)) {
+                            if (action === '/delete') {
+                                msg = t`Do you really want to trash the object?`;
+                            } else {
+                                msg = t`If you confirm, this resource will be gone forever. Are you sure?`;
+                            }
+                            done = true;
+                        }
+                    }
                 }
 
                 _vueInstance.dataChanged.clear();

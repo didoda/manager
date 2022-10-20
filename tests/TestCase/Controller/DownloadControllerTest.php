@@ -25,17 +25,17 @@ class DownloadControllerTest extends TestCase
     protected $apiClient = null;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function setUp()
+    public function setUp(): void
     {
         $this->apiClient = ApiClientProvider::getApiClient();
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function tearDown()
+    public function tearDown(): void
     {
         ApiClientProvider::setApiClient($this->apiClient);
     }
@@ -44,7 +44,6 @@ class DownloadControllerTest extends TestCase
      * Test download from URL
      *
      * @return void
-     *
      * @covers ::download()
      * @covers ::content()
      */
@@ -95,7 +94,6 @@ class DownloadControllerTest extends TestCase
      * Test download from stream
      *
      * @return void
-     *
      * @covers ::download()
      * @covers ::content()
      * @covers ::streamDownload()

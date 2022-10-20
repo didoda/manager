@@ -7,28 +7,12 @@ use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
 
 /**
- * Test class
- *
- * @uses \App\Controller\Admin\ApplicationsController
- */
-class AppsController extends ApplicationsController
-{
-    protected $resourceType = 'applications';
-    protected $properties = ['name'];
-}
-
-/**
  * {@see \App\Controller\Admin\ApplicationsController} Test Case
  *
  * @coversDefaultClass \App\Controller\Admin\ApplicationsController
  */
 class ApplicationsControllerTest extends TestCase
 {
-    /**
-     * Test subject
-     *
-     * @var \App\Test\TestCase\Controller\Admin\AppsController
-     */
     public $AppsController;
 
     /**
@@ -48,12 +32,12 @@ class ApplicationsControllerTest extends TestCase
     /**
      * API client
      *
-     * @var BEditaClient
+     * @var \BEdita\SDK\BEditaClient
      */
     protected $client;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function setUp(): void
     {
@@ -61,7 +45,12 @@ class ApplicationsControllerTest extends TestCase
 
         $config = array_merge($this->defaultRequestConfig, []);
         $request = new ServerRequest($config);
-        $this->AppsController = new AppsController($request);
+        $this->AppsController = new class ($request) extends ApplicationsController
+        {
+            protected $resourceType = 'applications';
+            protected $properties = ['name'];
+            protected $propertiesSecrets = ['api_key', 'client_secret'];
+        };
         $this->client = ApiClientProvider::getApiClient();
         $adminUser = getenv('BEDITA_ADMIN_USR');
         $adminPassword = getenv('BEDITA_ADMIN_PWD');
@@ -89,7 +78,7 @@ class ApplicationsControllerTest extends TestCase
             'readonly',
             'deleteonly',
         ];
-        $viewVars = (array)$this->AppsController->viewVars;
+        $viewVars = (array)$this->AppsController->viewBuilder()->getVars();
         foreach ($keys as $expectedKey) {
             static::assertArrayHasKey($expectedKey, $viewVars);
         }

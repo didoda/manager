@@ -2,7 +2,6 @@
 namespace App\Test\TestCase\Controller\Admin;
 
 use App\Controller\Admin\CacheController;
-use BEdita\WebTools\ApiClientProvider;
 use Cake\Cache\Cache;
 use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
@@ -22,7 +21,7 @@ class CacheControllerTest extends TestCase
     public $Cache;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function setUp(): void
     {
@@ -31,7 +30,7 @@ class CacheControllerTest extends TestCase
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function tearDown(): void
     {

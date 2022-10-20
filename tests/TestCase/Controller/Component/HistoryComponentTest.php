@@ -4,6 +4,7 @@ namespace App\Test\TestCase\Controller\Component;
 use App\Controller\Component\HistoryComponent;
 use App\Controller\Component\SchemaComponent;
 use App\Test\TestCase\Controller\AppControllerTest;
+use BEdita\SDK\BEditaClient;
 use BEdita\WebTools\ApiClientProvider;
 use Cake\Controller\Controller;
 use Cake\Http\ServerRequest;
@@ -53,7 +54,7 @@ class HistoryComponentTest extends TestCase
     private $documentId = null;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function setUp(): void
     {
@@ -61,8 +62,12 @@ class HistoryComponentTest extends TestCase
 
         $controller = new Controller();
         $registry = $controller->components();
-        $this->HistoryComponent = $registry->load(HistoryComponent::class);
-        $this->SchemaComponent = $registry->load(SchemaComponent::class);
+        /** @var \App\Controller\Component\HistoryComponent $historyComponent */
+        $historyComponent = $registry->load(HistoryComponent::class);
+        $this->HistoryComponent = $historyComponent;
+        /** @var \App\Controller\Component\SchemaComponent $schemaComponent */
+        $schemaComponent = $registry->load(SchemaComponent::class);
+        $this->SchemaComponent = $schemaComponent;
         $user = getenv('BEDITA_ADMIN_USR');
         $pass = getenv('BEDITA_ADMIN_PWD');
         $this->ApiClient = ApiClientProvider::getApiClient();
@@ -80,7 +85,7 @@ class HistoryComponentTest extends TestCase
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function tearDown(): void
     {
@@ -131,7 +136,7 @@ class HistoryComponentTest extends TestCase
      */
     public function testLoad(array $object, string $expected): void
     {
-        $session = $this->HistoryComponent->getController()->request->getSession();
+        $session = $this->HistoryComponent->getController()->getRequest()->getSession();
         if ($expected != '') {
             $key = sprintf('history.%s.attributes', $this->documentId);
             $session->write($key, $expected);
@@ -160,7 +165,7 @@ class HistoryComponentTest extends TestCase
                     'historyId' => 1,
                     'keepUname' => false,
                 ],
-                '{"status":"","uname":"","title":"","description":"","body":"","extra":"","lang":"","publish_start":"","publish_end":""}',
+                '{"status":"","uname":"","title":"a new title","description":"","body":"","extra":"","lang":"","publish_start":"","publish_end":"","field":"a new value for field"}',
             ],
             'test document, keepUname true' => [
                 [
@@ -169,7 +174,7 @@ class HistoryComponentTest extends TestCase
                     'historyId' => 1,
                     'keepUname' => true,
                 ],
-                '{"status":"","uname":null,"title":"","description":"","body":"","extra":"","lang":"","publish_start":"","publish_end":""}',
+                '{"status":"","uname":null,"title":"a new title","description":"","body":"","extra":"","lang":"","publish_start":"","publish_end":"","field":"a new value for field"}',
             ],
         ];
     }
@@ -177,21 +182,40 @@ class HistoryComponentTest extends TestCase
     /**
      * Test `write` method
      *
-     * @covers ::write()
-     * @dataProvider writeProvider()
      * @param array $options The options for test
      * @param string $expected The expected serialized data
      * @return void
+     * @covers ::write()
+     * @dataProvider writeProvider()
      */
     public function testWrite(array $options, string $expected): void
     {
+        // mock api /history
+        $response = [
+            'data' => [
+                [
+                    'meta' => [
+                        'changed' => [
+                            'field' => 'a new value for field',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $apiClient = $this->getMockBuilder(BEditaClient::class)
+            ->setConstructorArgs(['https://media.example.com'])
+            ->getMock();
+        $apiClient->method('get')
+            ->with('/history')
+            ->willReturn($response);
+        // set options
         $options += [
-            'ApiClient' => $this->ApiClient,
+            'ApiClient' => $apiClient,
             'Schema' => $this->SchemaComponent,
-            'Request' => $this->Request,
+            'Request' => $this->Request->withQueryParams(['title' => 'a new title']),
         ];
         $this->HistoryComponent->write($options);
-        $session = $this->HistoryComponent->getController()->request->getSession();
+        $session = $this->HistoryComponent->getController()->getRequest()->getSession();
         $actual = $session->read(sprintf('history.%s.attributes', $options['id']));
         static::assertEquals($expected, $actual);
     }
@@ -311,7 +335,7 @@ class HistoryComponentTest extends TestCase
     public function testFormatResponseData(array $data, $expected): void
     {
         // call private method using AppControllerTest->invokeMethod
-        $test = new AppControllerTest(new ServerRequest());
+        $test = new AppControllerTest();
         $test->invokeMethod($this->HistoryComponent, 'formatResponseData', [&$data[0], $data[1]]);
         $actual = $data[0];
         static::assertEquals($expected, $actual);
@@ -370,7 +394,7 @@ class HistoryComponentTest extends TestCase
                 [
                   ['name' => 'green'],
                 ],
-                '<div class="categories"><h3>Global</h3><div class="input select"><input type="hidden" name="categories" value=""/><div class="checkbox"><label for="categories-red"><input type="checkbox" name="categories[]" value="red" id="categories-red">Red</label></div><div class="checkbox"><label for="categories-green" class="selected"><input type="checkbox" name="categories[]" value="green" checked="checked" id="categories-green">Green</label></div><div class="checkbox"><label for="categories-blue"><input type="checkbox" name="categories[]" value="blue" id="categories-blue">Blue</label></div></div></div>',
+                '<div class="categories"><h3>Global</h3><div class="input select"><input type="hidden" name="categories" id="categories" value=""/><div class="checkbox"><label for="categories-red"><input type="checkbox" name="categories[]" value="red" id="categories-red">Red</label></div><div class="checkbox"><label for="categories-green" class="selected"><input type="checkbox" name="categories[]" value="green" checked="checked" id="categories-green">Green</label></div><div class="checkbox"><label for="categories-blue"><input type="checkbox" name="categories[]" value="blue" id="categories-blue">Blue</label></div></div></div>',
             ],
         ];
     }

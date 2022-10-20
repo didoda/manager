@@ -37,7 +37,7 @@ class CategoriesComponentTest extends TestCase
     public $Categories;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function setUp(): void
     {
@@ -47,7 +47,7 @@ class CategoriesComponentTest extends TestCase
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function tearDown(): void
     {
@@ -72,7 +72,7 @@ class CategoriesComponentTest extends TestCase
             ->getMock();
         $apiClient->method('get')
             ->with('/model/categories')
-            ->will($this->returnCallback(function () use (&$expected) {
+            ->will($this->returnCallback(function () {
                 $args = func_get_args();
 
                 return $args[1]; // options
@@ -92,6 +92,18 @@ class CategoriesComponentTest extends TestCase
 
         // restore api client
         ApiClientProvider::setApiClient($safeClient);
+    }
+
+    /**
+     * Test `names`
+     *
+     * @return void
+     * @covers ::names()
+     */
+    public function testNames(): void
+    {
+        $actual = $this->Categories->names('documents');
+        static::assertEmpty($actual);
     }
 
     /**
@@ -192,6 +204,7 @@ class CategoriesComponentTest extends TestCase
         $safeClient = ApiClientProvider::getApiClient();
 
         Cache::enable();
+        Cache::clearAll();
 
         // test invalidate schema too
         $key = CacheTools::cacheKey('documents');
@@ -258,7 +271,7 @@ class CategoriesComponentTest extends TestCase
             ->willReturn($expected);
         ApiClientProvider::setApiClient($apiClient);
 
-        $actual = $this->Categories->delete(999, 'documents');
+        $actual = $this->Categories->delete('999', 'documents');
         static::assertEquals($expected, $actual);
         $cached = Cache::read($key, SchemaComponent::CACHE_CONFIG);
         static::assertEmpty($cached);

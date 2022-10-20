@@ -1,4 +1,15 @@
 <?php
+/**
+ * BEdita, API-first content management framework
+ * Copyright 2022 Atlas Srl, Chialab Srl
+ *
+ * This file is part of BEdita: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * See LICENSE.LGPL or <http://gnu.org/licenses/lgpl-3.0.html> for more details.
+ */
 namespace App\Controller\Component;
 
 use App\Utility\CacheTools;
@@ -32,6 +43,27 @@ class CategoriesComponent extends Component
         }
 
         return $apiClient->get('/model/categories', $options);
+    }
+
+    /**
+     * Fetch categories names
+     *
+     * @param string|null $objectType The object type
+     * @return array
+     */
+    public function names(?string $objectType = null): array
+    {
+        $apiClient = ApiClientProvider::getApiClient();
+        $query = [
+            'fields' => 'name',
+            'page_size' => 500, // BE4 API MAX_LIMIT
+        ];
+        if (!empty($objectType)) {
+            $query['filter']['type'] = $objectType;
+        }
+        $response = $apiClient->get('/model/categories', $query);
+
+        return (array)Hash::extract($response, 'data.{n}.attributes.name');
     }
 
     /**
@@ -124,7 +156,7 @@ class CategoriesComponent extends Component
     /**
      * Delete a category using the `/model/` API.
      *
-     * @param string|int $id The category id to delete.
+     * @param string $id The category id to delete.
      * @param string $type The object type name of the category.
      * @return array|null The BEdita API response for the deleted category.
      */

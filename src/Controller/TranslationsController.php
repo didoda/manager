@@ -12,7 +12,7 @@
  */
 namespace App\Controller;
 
-use App\Controller\ModulesController;
+use BEdita\I18n\Core\I18nTrait;
 use BEdita\SDK\BEditaClientException;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Exception\NotFoundException;
@@ -33,12 +33,14 @@ use Psr\Log\LogLevel;
  */
 class TranslationsController extends ModulesController
 {
+    use I18nTrait;
+
     /**
      * @inheritDoc
      */
     public function initialize(): void
     {
-        $this->request = $this->request->withParam('object_type', 'translations');
+        $this->setRequest($this->getRequest()->withParam('object_type', 'translations'));
         parent::initialize();
         $this->Query->setConfig('include', 'object');
     }
@@ -51,14 +53,14 @@ class TranslationsController extends ModulesController
      */
     public function add($id): ?Response
     {
-        $this->request->allowMethod(['get']);
+        $this->getRequest()->allowMethod(['get']);
         $this->objectType = $this->typeFromUrl();
 
         try {
             $response = $this->apiClient->getObject($id, $this->objectType);
         } catch (BEditaClientException $e) {
             // Error! Back to index.
-            $this->log($e, LogLevel::ERROR);
+            $this->log($e->getMessage(), LogLevel::ERROR);
             $this->Flash->error($e->getMessage(), ['params' => $e]);
 
             return $this->redirect(['_name' => 'modules:view', 'object_type' => $this->objectType, 'id' => $id]);
@@ -70,6 +72,8 @@ class TranslationsController extends ModulesController
         $object = Hash::extract($response, 'data');
         $this->set('translation', []);
         $this->set('object', $object);
+        // Use first available language as default new language
+        $this->set('newLang', array_key_first($this->getLanguages()));
 
         return null;
     }
@@ -83,7 +87,7 @@ class TranslationsController extends ModulesController
      */
     public function edit($id, $lang): ?Response
     {
-        $this->request->allowMethod(['get']);
+        $this->getRequest()->allowMethod(['get']);
         $this->objectType = $this->typeFromUrl();
 
         $translation = [];
@@ -103,7 +107,7 @@ class TranslationsController extends ModulesController
             }
         } catch (\Exception $e) {
             // Error! Back to index.
-            $this->log($e, LogLevel::ERROR);
+            $this->log($e->getMessage(), LogLevel::ERROR);
             $this->Flash->error($e->getMessage(), ['params' => $e]);
 
             return $this->redirect(['_name' => 'modules:view', 'object_type' => $this->objectType, 'id' => $id]);
@@ -121,11 +125,14 @@ class TranslationsController extends ModulesController
 
     /**
      * Create or edit single translation.
+     *
+     * @return void
      */
     public function save(): void
     {
         $this->request->allowMethod(['post']);
         $this->objectType = $this->typeFromUrl();
+        $this->setupJsonKeys();
         $requestData = $this->prepareRequest($this->objectType);
         $objectId = $requestData['object_id'];
         if (!empty($requestData['id'])) {
@@ -136,10 +143,10 @@ class TranslationsController extends ModulesController
             $this->apiClient->save('translations', $requestData);
         } catch (BEditaClientException $e) {
             // Error! Back to object view or index.
-            $this->log($e, LogLevel::ERROR);
+            $this->log($e->getMessage(), LogLevel::ERROR);
             $this->Flash->error($e->getMessage(), ['params' => $e]);
 
-            if ($this->request->getData('id')) {
+            if ($this->getRequest()->getData('id')) {
                 $this->redirect([
                     '_name' => 'translations:edit',
                     'object_type' => $this->objectType,
@@ -168,6 +175,23 @@ class TranslationsController extends ModulesController
     }
 
     /**
+     * Setup internal `_jsonKeys`, add `translated_fields.` prefix
+     * to create the correct path to the single translated field.
+     *
+     * @return void
+     */
+    protected function setupJsonKeys(): void
+    {
+        $jsonKeys = (array)array_map(
+            function ($v) {
+                return sprintf('translated_fields.%s', $v);
+            },
+            explode(',', (string)$this->request->getData('_jsonKeys'))
+        );
+        $this->request = $this->request->withData('_jsonKeys', implode(',', $jsonKeys));
+    }
+
+    /**
      * Delete single translation.
      * Expected request:
      *     data: [
@@ -181,9 +205,10 @@ class TranslationsController extends ModulesController
      */
     public function delete(): Response
     {
-        $this->request->allowMethod(['post']);
+        $this->getRequest()->allowMethod(['post']);
         $this->objectType = $this->typeFromUrl();
-        $requestData = $this->request->getData();
+        $requestData = $this->getRequest()->getData();
+        $translation = [];
         try {
             if (empty($requestData[0])) {
                 throw new BadRequestException(__('Empty request data'));
@@ -198,7 +223,7 @@ class TranslationsController extends ModulesController
             // remove completely the translation
             $this->apiClient->delete(sprintf('/translations/%s', $translation['id']));
         } catch (BEditaClientException $e) {
-            $this->log($e, LogLevel::ERROR);
+            $this->log($e->getMessage(), LogLevel::ERROR);
             $this->Flash->error($e->getMessage(), ['params' => $e]);
 
             // redir to main object view
@@ -220,7 +245,7 @@ class TranslationsController extends ModulesController
         if ($this->objectType !== 'translations') {
             return $this->objectType;
         }
-        $here = (string)$this->request->getAttribute('here');
+        $here = (string)$this->getRequest()->getAttribute('here');
 
         return substr($here, 1, strpos(substr($here, 1), '/'));
     }

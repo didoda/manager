@@ -55,6 +55,10 @@ class OptionsTest extends TestCase
                     'type' => 'select',
                     'options' => [
                         [
+                            'value' => '',
+                            'text' => '',
+                        ],
+                        [
                             'value' => 'en',
                             'text' => 'English',
                         ],
@@ -203,7 +207,6 @@ class OptionsTest extends TestCase
      * @param array $expected Expected result.
      * @param array $config Configuration.
      * @return void
-     *
      * @dataProvider customControlProvider()
      * @covers ::customControl()
      * @covers ::lang

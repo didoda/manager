@@ -54,12 +54,22 @@
         #{$text-inputs}, textarea {
             width: 100%;
             background-color: $gray-200;
+
+            &:disabled {
+                opacity: 0.65;
+                cursor: not-allowed;
+            }
         }
 
         #{$text-inputs} {
             &.input-narrow {
                 max-width: 4 * $gutter;
             }
+        }
+
+        // Invalid field
+        .invalid input[type=text] {
+            background-color: red;
         }
 
         .select {

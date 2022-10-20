@@ -34,37 +34,35 @@ class LinkHelper extends Helper
     public $helpers = ['Html'];
 
     /**
-     * API base URL
+     * {@inheritDoc}
      *
-     * @var string
-     */
-    protected $apiBaseUrl = null;
-
-    /**
-     * WebApp base URL
+     * Default configuration
      *
-     * @var string
+     *  - 'apiBaseUrl': API base URL
+     *  - 'webBaseUrl': WebApp base URL
+     *  - 'query': Request Query params
      */
-    protected $webBaseUrl = null;
-
-    /**
-     * Request Query params
-     *
-     * @var array
-     */
-    protected $query = [];
+    protected $_defaultConfig = [
+        'apiBaseUrl' => '',
+        'webBaseUrl' => '',
+        'query' => [],
+    ];
 
     /**
      * {@inheritDoc}
      *
      * Init API and WebAPP base URL
+     *
      * @codeCoverageIgnore
      */
     public function initialize(array $config): void
     {
-        $this->apiBaseUrl = Configure::read('API.apiBaseUrl');
-        $this->webBaseUrl = Router::fullBaseUrl();
-        $this->query = $this->getView()->getRequest()->getQueryParams();
+        $default = [
+            'apiBaseUrl' => Configure::read('API.apiBaseUrl'),
+            'webBaseUrl' => Router::fullBaseUrl(),
+            'query' => $this->getView()->getRequest()->getQueryParams(),
+        ];
+        $this->setConfig(array_merge($default, $config));
     }
 
     /**
@@ -75,11 +73,12 @@ class LinkHelper extends Helper
      */
     public function baseUrl(): string
     {
-        if (substr_compare($this->webBaseUrl, ':80', -strlen(':80')) === 0) {
-            return substr($this->webBaseUrl, 0, strpos($this->webBaseUrl, ':80'));
+        $url = (string)$this->getConfig('webBaseUrl');
+        if (substr_compare($url, ':80', -strlen(':80')) === 0) {
+            return substr($url, 0, strpos($url, ':80'));
         }
 
-        return $this->webBaseUrl;
+        return $url;
     }
 
     /**
@@ -91,7 +90,7 @@ class LinkHelper extends Helper
      */
     public function fromAPI($apiUrl): void
     {
-        echo str_replace($this->apiBaseUrl, $this->webBaseUrl, $apiUrl);
+        echo str_replace($this->getConfig('apiBaseUrl'), $this->getConfig('webBaseUrl'), $apiUrl);
     }
 
     /**
@@ -103,10 +102,10 @@ class LinkHelper extends Helper
      */
     public function sortUrl($field, $resetPage = true): string
     {
-        $sort = (string)Hash::get($this->query, 'sort');
+        $sort = (string)Hash::get($this->getConfig('query'), 'sort');
         $sort = $this->sortValue($field, $sort);
         $replace = compact('sort');
-        $currentPage = Hash::get($this->query, 'page');
+        $currentPage = Hash::get($this->getConfig('query'), 'page');
         if (isset($currentPage) && $resetPage) {
             $replace['page'] = 1;
         }
@@ -155,7 +154,7 @@ class LinkHelper extends Helper
      */
     public function sortClass(string $field): string
     {
-        $sort = (string)Hash::get($this->query, 'sort');
+        $sort = (string)Hash::get($this->getConfig('query'), 'sort');
         if (empty($sort)) {
             return '';
         }
@@ -163,7 +162,7 @@ class LinkHelper extends Helper
         if ($sort === $sortField) { // it was ascendant sort
             return 'sort down';
         }
-        if ($sort === ('-' . $sortField)) { // it was descendant sort
+        if ($sort === '-' . $sortField) { // it was descendant sort
             return 'sort up';
         }
 
@@ -200,15 +199,22 @@ class LinkHelper extends Helper
      */
     public function here($options = []): string
     {
-        $here = $this->webBaseUrl . $this->getView()->getRequest()->getAttribute('here');
-        if (empty($this->query) || !empty($options['no-query'])) {
+        $url = (string)$this->getConfig('webBaseUrl');
+        $here = sprintf(
+            '%s%s',
+            $url,
+            $this->getView()->getRequest()->getAttribute('here')
+        );
+        $query = (array)$this->getConfig('query');
+        if (empty($query) || !empty($options['no-query'])) {
             return $here;
         }
-
         if (isset($options['exclude'])) {
-            unset($this->query[$options['exclude']]);
+            $key = sprintf('query.%s', $options['exclude']);
+            $this->setConfig($key, null);
+            $query = (array)$this->getConfig('query');
         }
-        $q = http_build_query($this->query);
+        $q = http_build_query($query);
         if (!empty($q)) {
             return $here . '?' . $q;
         }
@@ -225,7 +231,7 @@ class LinkHelper extends Helper
     private function replaceQueryParams(array $queryParams): string
     {
         $request = $this->getView()->getRequest();
-        $query = array_merge($this->query, $queryParams);
+        $query = array_merge((array)$this->getConfig('query'), $queryParams);
 
         return (string)$request->getUri()->withQuery(http_build_query($query));
     }
@@ -258,7 +264,7 @@ class LinkHelper extends Helper
         if (!file_exists($path)) {
             return '';
         }
-        $method = ($extension === 'js') ? 'script' : 'css';
+        $method = $extension === 'js' ? 'script' : 'css';
 
         return $this->Html->{$method}(sprintf('%s.%s.plugin.%s', $plugin, $plugin, $extension));
     }
@@ -297,10 +303,9 @@ class LinkHelper extends Helper
      *
      * @param array $filter list of file name filters
      * @param string $type file type (js/css)
-
      * @return array files found
      */
-    protected function findFiles(array $filter, string $type): array
+    public function findFiles(array $filter, string $type): array
     {
         $files = [];
         $filesPath = WWW_ROOT . $type;

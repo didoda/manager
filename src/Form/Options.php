@@ -69,7 +69,7 @@ class Options
         if (empty($languages)) {
             return compact('value') + ['type' => 'text'];
         }
-        $options = [];
+        $options[] = ['value' => '', 'text' => ''];
         foreach ($languages as $key => $description) {
             $options[] = ['value' => $key, 'text' => __($description)];
         }
@@ -85,7 +85,7 @@ class Options
      */
     public static function dateRanges($value): array
     {
-        return Control::datetime($value);
+        return Control::datetime(compact('value'));
     }
 
     /**
@@ -96,7 +96,7 @@ class Options
      */
     public static function startDate($value): array
     {
-        return Control::datetime($value);
+        return Control::datetime(compact('value'));
     }
 
     /**
@@ -107,7 +107,7 @@ class Options
      */
     public static function endDate($value): array
     {
-        return Control::datetime($value);
+        return Control::datetime(compact('value'));
     }
 
     /**

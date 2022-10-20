@@ -7,17 +7,6 @@ use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
 
 /**
- * Test class
- *
- * @uses \App\Controller\Admin\AsyncJobsController
- */
-class JobsController extends AsyncJobsController
-{
-    protected $resourceType = 'async_jobs';
-    protected $properties = ['name'];
-}
-
-/**
  * {@see \App\Controller\Admin\AsyncJobsController} Test Case
  *
  * @coversDefaultClass \App\Controller\Admin\AsyncJobsController
@@ -27,7 +16,7 @@ class AsyncJobsControllerTest extends TestCase
     /**
      * Test subject
      *
-     * @var \App\Test\TestCase\Controller\Admin\AsyncJobsController
+     * @var \App\Controller\Admin\AsyncJobsController
      */
     public $AsyncJobsController;
 
@@ -48,12 +37,12 @@ class AsyncJobsControllerTest extends TestCase
     /**
      * API client
      *
-     * @var BEditaClient
+     * @var \BEdita\SDK\BEditaClient
      */
     protected $client;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function setUp(): void
     {
@@ -61,7 +50,11 @@ class AsyncJobsControllerTest extends TestCase
 
         $config = array_merge($this->defaultRequestConfig, []);
         $request = new ServerRequest($config);
-        $this->AsyncJobsController = new JobsController($request);
+        $this->AsyncJobsController = new class ($request) extends AsyncJobsController
+        {
+            protected $resourceType = 'async_jobs';
+            protected $properties = ['name'];
+        };
         $this->client = ApiClientProvider::getApiClient();
         $adminUser = getenv('BEDITA_ADMIN_USR');
         $adminPassword = getenv('BEDITA_ADMIN_PWD');
@@ -89,7 +82,7 @@ class AsyncJobsControllerTest extends TestCase
             'readonly',
             'deleteonly',
         ];
-        $viewVars = (array)$this->AsyncJobsController->viewVars;
+        $viewVars = (array)$this->AsyncJobsController->viewBuilder()->getVars();
         foreach ($keys as $expectedKey) {
             static::assertArrayHasKey($expectedKey, $viewVars);
         }

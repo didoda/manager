@@ -12,7 +12,6 @@
  */
 namespace App\Controller;
 
-use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\InstanceConfigTrait;
 use Cake\Http\Client;
@@ -21,14 +20,13 @@ use Cake\Utility\Hash;
 
 /**
  * Download Controller
- *
  */
 class DownloadController extends AppController
 {
     use InstanceConfigTrait;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     protected $_defaultConfig = [
         // HTTP client configuration
@@ -49,7 +47,7 @@ class DownloadController extends AppController
         $contentType = Hash::get($stream, 'attributes.mime_type');
 
         // output
-        $response = $this->response->withStringBody($this->content($stream));
+        $response = $this->getResponse()->withStringBody($this->content($stream));
         $response = $response->withType($contentType);
 
         return $response->withDownload($filename);

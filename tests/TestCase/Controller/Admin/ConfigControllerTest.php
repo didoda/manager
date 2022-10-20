@@ -2,21 +2,9 @@
 namespace App\Test\TestCase\Controller\Admin;
 
 use App\Controller\Admin\ConfigController;
-use BEdita\SDK\BEditaClient;
 use BEdita\WebTools\ApiClientProvider;
 use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
-
-/**
- * Test class
- *
- * @uses \App\Controller\Admin\ConfigController
- */
-class CfgController extends ConfigController
-{
-    protected $resourceType = 'config';
-    protected $properties = ['name'];
-}
 
 /**
  * {@see \App\Controller\Admin\ConfigController} Test Case
@@ -25,11 +13,6 @@ class CfgController extends ConfigController
  */
 class ConfigControllerTest extends TestCase
 {
-    /**
-     * Test subject
-     *
-     * @var \App\Test\TestCase\Controller\Admin\CfgController
-     */
     public $CfgController;
 
     /**
@@ -49,20 +32,25 @@ class ConfigControllerTest extends TestCase
     /**
      * API client
      *
-     * @var BEditaClient
+     * @var \BEdita\SDK\BEditaClient
      */
     protected $client;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function setUp(): void
     {
         parent::setUp();
+        $this->loadRoutes();
 
         $config = array_merge($this->defaultRequestConfig, []);
         $request = new ServerRequest($config);
-        $this->CfgController = new CfgController($request);
+        $this->CfgController = new class ($request) extends ConfigController
+        {
+            protected $resourceType = 'config';
+            protected $properties = ['name'];
+        };
         $this->client = ApiClientProvider::getApiClient();
         $adminUser = getenv('BEDITA_ADMIN_USR');
         $adminPassword = getenv('BEDITA_ADMIN_PWD');
@@ -90,7 +78,7 @@ class ConfigControllerTest extends TestCase
             'readonly',
             'deleteonly',
         ];
-        $viewVars = (array)$this->CfgController->viewVars;
+        $viewVars = (array)$this->CfgController->viewBuilder()->getVars();
         foreach ($keys as $expectedKey) {
             static::assertArrayHasKey($expectedKey, $viewVars);
         }
@@ -108,7 +96,7 @@ class ConfigControllerTest extends TestCase
     {
         $event = $this->CfgController->dispatchEvent('Controller.beforeFilter');
         $this->CfgController->beforeFilter($event);
-        $viewVars = (array)$this->CfgController->viewVars;
+        $viewVars = (array)$this->CfgController->viewBuilder()->getVars();
         static::assertEquals(['' => __('No application'), 1 => 'default-app', 2 => 'manager'], $viewVars['applications']);
     }
 }

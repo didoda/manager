@@ -13,12 +13,22 @@
 namespace App\Test\TestCase;
 
 use App\Application;
+use App\Identifier\ApiIdentifier;
+use App\Middleware\ConfigurationMiddleware;
 use App\Middleware\ProjectMiddleware;
+use App\Middleware\StatusMiddleware;
+use Authentication\AuthenticationService;
+use Authentication\Authenticator\AuthenticatorInterface;
+use Authentication\Identifier\IdentifierInterface;
+use Authentication\Identifier\Resolver\ResolverInterface;
+use Authentication\Middleware\AuthenticationMiddleware;
 use BEdita\I18n\Middleware\I18nMiddleware;
+use BEdita\WebTools\Middleware\OAuth2Middleware;
 use Cake\Core\Configure;
 use Cake\Error\Middleware\ErrorHandlerMiddleware;
-use Cake\Http\MiddlewareQueue;
 use Cake\Http\Middleware\CsrfProtectionMiddleware;
+use Cake\Http\MiddlewareQueue;
+use Cake\Http\ServerRequest;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
 use Cake\TestSuite\TestCase;
@@ -34,7 +44,6 @@ class ApplicationTest extends TestCase
      * Test `middleware` method
      *
      * @return void
-     *
      * @covers ::middleware()
      * @covers ::csrfMiddleware()
      * @covers ::bootstrap()
@@ -47,33 +56,52 @@ class ApplicationTest extends TestCase
 
         $middleware = new MiddlewareQueue();
         $middleware = $app->middleware($middleware);
+        $middleware->rewind();
 
-        static::assertInstanceOf(ErrorHandlerMiddleware::class, $middleware->get(0));
-        static::assertInstanceOf(ProjectMiddleware::class, $middleware->get(1));
-        static::assertInstanceOf(AssetMiddleware::class, $middleware->get(2));
-        static::assertInstanceOf(I18nMiddleware::class, $middleware->get(3));
-        static::assertInstanceOf(RoutingMiddleware::class, $middleware->get(4));
-        static::assertInstanceOf(CsrfProtectionMiddleware::class, $middleware->get(5));
+        static::assertInstanceOf(ErrorHandlerMiddleware::class, $middleware->current());
+        $middleware->next();
+        static::assertInstanceOf(ProjectMiddleware::class, $middleware->current());
+        $middleware->next();
+        static::assertInstanceOf(StatusMiddleware::class, $middleware->current());
+        $middleware->next();
+        static::assertInstanceOf(ConfigurationMiddleware::class, $middleware->current());
+        $middleware->next();
+        static::assertInstanceOf(AssetMiddleware::class, $middleware->current());
+        $middleware->next();
+        static::assertInstanceOf(I18nMiddleware::class, $middleware->current());
+        $middleware->next();
+        static::assertInstanceOf(RoutingMiddleware::class, $middleware->current());
+        $middleware->next();
+        static::assertInstanceOf(CsrfProtectionMiddleware::class, $middleware->current());
+        $middleware->next();
+        static::assertInstanceOf(AuthenticationMiddleware::class, $middleware->current());
+        $middleware->next();
+        static::assertInstanceOf(OAuth2Middleware::class, $middleware->current());
     }
 
     /**
-     * Test `addPluginDev` method
+     * Test `bootstrap` method
      *
      * @return void
-     * @covers ::addPluginDev()
+     * @covers ::bootstrap()
+     * @covers ::bootstrapCli()
      */
-    public function testAddPluginDev(): void
+    public function testBootstrap(): void
     {
         $app = new Application(CONFIG);
-        static::assertEquals(true, $app->addPluginDev('IdeHelper'));
-        static::assertEquals(false, $app->addPluginDev('NotExisting'));
+        $app->bootstrap();
+
+        static::assertTrue($app->getPlugins()->has('Bake'));
+        static::assertTrue($app->getPlugins()->has('IdeHelper'));
+        static::assertTrue($app->getPlugins()->has('BEdita/WebTools'));
+        static::assertTrue($app->getPlugins()->has('BEdita/I18n'));
+        static::assertTrue($app->getPlugins()->has('Authentication'));
     }
 
     /**
      * Test `loadPluginsFromConfig` method
      *
      * @return void
-     *
      * @covers ::loadPluginsFromConfig()
      */
     public function testLoadPlugins(): void
@@ -106,7 +134,6 @@ class ApplicationTest extends TestCase
      * Test `loadProjectConfig` method
      *
      * @return void
-     *
      * @covers ::loadProjectConfig()
      */
     public function testLoadProjectConfig(): void
@@ -121,5 +148,62 @@ class ApplicationTest extends TestCase
 
         Application::loadProjectConfig('test', $projectsPath);
         static::assertEquals('Test', Configure::read('Project.name'));
+    }
+
+    /**
+     * Test `getAuthenticationService` method.
+     *
+     * @return void
+     * @covers ::getAuthenticationService()
+     */
+    public function testGetAuthenticationService(): void
+    {
+        $app = new Application(CONFIG);
+        /** @var \Authentication\AuthenticationService $authService */
+        $authService = $app->getAuthenticationService(new ServerRequest());
+        /** @var \App\Identifier\ApiIdentifier $identifier */
+        $identifier = $authService->identifiers()->get(ApiIdentifier::class);
+        static::assertInstanceOf(AuthenticationService::class, $authService);
+        static::assertInstanceOf(IdentifierInterface::class, $identifier);
+        static::assertInstanceOf(ResolverInterface::class, $identifier->getResolver());
+        static::assertInstanceOf(AuthenticatorInterface::class, $authService->authenticators()->get('Session'));
+    }
+
+    /**
+     * Test `getAuthenticationService` method on login requests.
+     *
+     * @return void
+     * @covers ::getAuthenticationService()
+     */
+    public function testLoginGetAuthenticationService(): void
+    {
+        $app = new Application(CONFIG);
+        $request = new ServerRequest(['url' => '/login']);
+        /** @var \Authentication\AuthenticationService $authService */
+        $authService = $app->getAuthenticationService($request);
+
+        static::assertFalse($authService->authenticators()->has('BEdita/WebTools.OAuth2'));
+        static::assertTrue($authService->authenticators()->has('Form'));
+        static::assertInstanceOf(AuthenticatorInterface::class, $authService->authenticators()->get('Form'));
+    }
+
+    /**
+     * Test `getAuthenticationService` method on login requests.
+     *
+     * @return void
+     * @covers ::getAuthenticationService()
+     */
+    public function testOAuth2GetAuthenticationService(): void
+    {
+        $app = new Application(CONFIG);
+        $request = new ServerRequest(['url' => '/ext/login/google']);
+        /** @var \Authentication\AuthenticationService $authService */
+        $authService = $app->getAuthenticationService($request);
+
+        static::assertFalse($authService->authenticators()->has('Form'));
+        static::assertTrue($authService->authenticators()->has('OAuth2'));
+        static::assertInstanceOf(AuthenticatorInterface::class, $authService->authenticators()->get('OAuth2'));
+        static::assertTrue($authService->identifiers()->has('OAuth2'));
+        static::assertInstanceOf(IdentifierInterface::class, $authService->identifiers()->get('OAuth2'));
     }
 }

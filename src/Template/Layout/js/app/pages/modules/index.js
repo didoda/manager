@@ -11,10 +11,12 @@ import { t } from 'ttag';
 export default {
     components: {
         CategoryPicker: () => import(/* webpackChunkName: "category-picker" */'app/components/category-picker/category-picker'),
+        TagPicker: () => import(/* webpackChunkName: "tag-picker" */'app/components/tag-picker/tag-picker'),
         FolderPicker: () => import(/* webpackChunkName: "folder-picker" */'app/components/folder-picker/folder-picker'),
         DateRangesList: () => import(/* webpackChunkName: "date-ranges-list" */'app/components/date-ranges-list/date-ranges-list'),
         TreeView: () => import(/* webpackChunkName: "tree-view" */'app/components/tree-view/tree-view'),
         FilterBoxView: () => import(/* webpackChunkName: "tree-view" */'app/components/filter-box'),
+        IndexCell: () => import(/* webpackChunkName: "index-cell" */'app/components/index-cell/index-cell'),
     },
 
     /**
@@ -99,9 +101,17 @@ export default {
         },
         checkAll() {
             this.selectedRows = JSON.parse(JSON.stringify(this.allIds));
+            for (let id of this.allIds) {
+                let row = document.querySelector(`a[data-id="${id}"]`);
+                this.rowBackground(row, true);
+            }
         },
         unCheckAll() {
             this.selectedRows = [];
+            for (let id of this.allIds) {
+                let row = document.querySelector(`a[data-id="${id}"]`);
+                this.rowBackground(row, false);
+            }
         },
 
         /**
@@ -165,13 +175,25 @@ export default {
         selectRow(event) {
             if (event.target.type != 'checkbox') {
                 event.preventDefault();
-                var cb = event.target.querySelector('input[type=checkbox]');
+                let cb = event.target.querySelector('input[type=checkbox]');
                 let position = this.selectedRows.indexOf(cb.value);
                 if (position != -1) {
                     this.selectedRows.splice(position, 1);
                 } else {
                     this.selectedRows.push(cb.value);
                 }
+            } else {
+                let row = event.target.closest('a.table-row');
+                let checked = event.target.checked;
+                this.rowBackground(row, checked);
+            }
+        },
+
+        rowBackground(row, checked) {
+            if (checked) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
             }
         },
 

@@ -14,7 +14,7 @@ namespace App\Controller;
 
 use BEdita\SDK\BEditaClientException;
 use Cake\Core\Configure;
-use Cake\Event\Event;
+use Cake\Event\EventInterface;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Response;
 use Cake\Utility\Hash;
@@ -33,11 +33,9 @@ class ImportController extends AppController
     protected $services = [];
 
     /**
-     * {@inheritDoc}
-     *
-     * @codeCoverageIgnore
+     * @inheritDoc
      */
-    public function beforeRender(Event $event): ?Response
+    public function beforeRender(EventInterface $event): ?Response
     {
         $this->set('moduleLink', ['_name' => 'import:index']);
 
@@ -48,11 +46,10 @@ class ImportController extends AppController
      * Display import page.
      *
      * @return void
-     * @codeCoverageIgnore
      */
     public function index(): void
     {
-        $result = $this->request->getSession()->consume('Import.result');
+        $result = $this->getRequest()->getSession()->consume('Import.result');
         $this->set(compact('result'));
         $this->loadFilters();
     }
@@ -65,10 +62,10 @@ class ImportController extends AppController
     public function jobs(): void
     {
         $this->viewBuilder()->setClassName('Json');
-        $this->request->allowMethod('get');
+        $this->getRequest()->allowMethod('get');
         $this->loadFilters();
         $this->loadAsyncJobs();
-        $this->set('_serialize', ['jobs']);
+        $this->setSerialize(['jobs']);
     }
 
     /**
@@ -79,24 +76,26 @@ class ImportController extends AppController
     public function file(): ?Response
     {
         try {
-            $filter = $this->request->getData('filter');
+            $filter = $this->getRequest()->getData('filter');
             if (empty($filter)) {
                 throw new BadRequestException(__('Import filter not selected'));
             }
             $importFilter = new $filter($this->apiClient);
 
             // see http://php.net/manual/en/features.file-upload.errors.php
-            $fileError = (int)$this->request->getData('file.error', UPLOAD_ERR_NO_FILE);
+            /** @var \Laminas\Diactoros\UploadedFile $file */
+            $file = $this->getRequest()->getData('file');
+            $fileError = $file->getError();
             if ($fileError > UPLOAD_ERR_OK) {
                 throw new BadRequestException($this->uploadErrorMessage($fileError));
             }
 
             $result = $importFilter->import(
-                $this->request->getData('file.name'),
-                $this->request->getData('file.tmp_name'),
-                $this->request->getData('filter_options')
+                $file->getClientFileName(),
+                $file->getStream()->getMetadata('uri'),
+                $this->getRequest()->getData('filter_options')
             );
-            $this->request->getSession()->write(['Import.result' => $result]);
+            $this->getRequest()->getSession()->write(['Import.result' => $result]);
         } catch (Exception $e) {
             $this->Flash->error($e->getMessage(), ['params' => $e]);
         }
@@ -180,7 +179,7 @@ class ImportController extends AppController
         try {
             $response = $this->apiClient->get('/admin/async_jobs', $query);
         } catch (BEditaClientException $e) {
-            $this->log($e, 'error');
+            $this->log($e->getMessage(), 'error');
             $this->Flash->error($e->getMessage(), ['params' => $e]);
             $response = [];
         }

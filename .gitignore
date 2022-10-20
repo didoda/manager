@@ -3,13 +3,14 @@
 /.vagrant/*
 /composer.lock
 /composer.local.json
-/config/app.php
+/config/app_local.php
 /config/.env
 /config/projects/*
 /coverage/*
 /index.html
 /logs/*
 !/logs/.gitkeep
+/phpstan.neon
 /phpunit.xml
 /provision/*
 /tests/.env
@@ -17,6 +18,7 @@
 !/tmp/.gitkeep
 /vendor/*
 !/vendor/.gitkeep
+/.phpunit.result.cache
 
 # docs #
 ########

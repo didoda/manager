@@ -3,41 +3,16 @@ namespace App\Test\TestCase\Controller\Admin;
 
 use App\Controller\Admin\AdministrationBaseController;
 use App\Controller\Admin\RolesController;
+use Authentication\AuthenticationServiceInterface;
+use Authentication\Identity;
+use Authentication\IdentityInterface;
 use BEdita\WebTools\ApiClientProvider;
 use Cake\Http\Exception\UnauthorizedException;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
-
-/**
- * Test class
- *
- * @uses \App\Controller\Admin\AdministrationBaseController
- */
-class AdminBaseController extends AdministrationBaseController
-{
-    /**
-     * Resource type currently used
-     *
-     * @var string
-     */
-    protected $resourceType = 'applications';
-}
-
-/**
- * Test class
- *
- * @uses \App\Controller\Admin\AdministrationBaseController
- */
-class WrongAdminBaseController extends AdministrationBaseController
-{
-    /**
-     * Resource type currently used
-     *
-     * @var string
-     */
-    protected $resourceType = 'wrongtype';
-}
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * {@see \App\Controller\Admin\AdministrationBaseController} Test Case
@@ -46,18 +21,8 @@ class WrongAdminBaseController extends AdministrationBaseController
  */
 class AdministrationBaseControllerTest extends TestCase
 {
-    /**
-     * Test subject
-     *
-     * @var \App\Test\TestCase\Controller\Admin\AdminBaseController
-     */
     public $AdministrationBaseController;
 
-    /**
-     * Test subject
-     *
-     * @var \App\Controller\Admin\RolesController
-     */
     public $RlsController;
 
     /**
@@ -77,20 +42,24 @@ class AdministrationBaseControllerTest extends TestCase
     /**
      * API client
      *
-     * @var BEditaClient
+     * @var \BEdita\SDK\BEditaClient
      */
     protected $client;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function setUp(): void
     {
         parent::setUp();
+        $this->loadRoutes();
 
         $config = array_merge($this->defaultRequestConfig, []);
         $request = new ServerRequest($config);
-        $this->AdministrationBaseController = new AdminBaseController($request);
+        $this->AdministrationBaseController = new class ($request) extends AdministrationBaseController
+        {
+            protected $resourceType = 'applications';
+        };
         $this->client = ApiClientProvider::getApiClient();
         $adminUser = getenv('BEDITA_ADMIN_USR');
         $adminPassword = getenv('BEDITA_ADMIN_PWD');
@@ -108,12 +77,43 @@ class AdministrationBaseControllerTest extends TestCase
     {
         $config = array_merge($this->defaultRequestConfig, $cfg);
         $request = new ServerRequest($config);
-        $this->RlsController = new RolesController($request);
+        $this->RlsController = new class ($request) extends RolesController
+        {
+            protected $resourceType = 'roles';
+            protected $properties = ['name'];
+        };
         $this->client = ApiClientProvider::getApiClient();
         $adminUser = getenv('BEDITA_ADMIN_USR');
         $adminPassword = getenv('BEDITA_ADMIN_PWD');
         $response = $this->client->authenticate($adminUser, $adminPassword);
         $this->client->setupTokens($response['meta']);
+    }
+
+    /**
+     * Get mocked AuthenticationService.
+     *
+     * @return AuthenticationServiceInterface
+     */
+    protected function getAuthenticationServiceMock(): AuthenticationServiceInterface
+    {
+        $authenticationService = $this->getMockBuilder(AuthenticationServiceInterface::class)
+            ->getMock();
+        $authenticationService->method('clearIdentity')
+            ->willReturnCallback(function (ServerRequestInterface $request, ResponseInterface $response): array {
+                return [
+                    'request' => $request->withoutAttribute('identity'),
+                    'response' => $response,
+                ];
+            });
+        $authenticationService->method('persistIdentity')
+            ->willReturnCallback(function (ServerRequestInterface $request, ResponseInterface $response, IdentityInterface $identity): array {
+                return [
+                    'request' => $request->withAttribute('identity', $identity),
+                    'response' => $response,
+                ];
+            });
+
+        return $authenticationService;
     }
 
     /**
@@ -176,7 +176,10 @@ class AdministrationBaseControllerTest extends TestCase
         if (isset($data['tokens'])) {
             $data['tokens'] = $this->client->getTokens();
         }
-        $this->AdministrationBaseController->Auth->setUser($data);
+
+        // Mock Authentication component
+        $this->AdministrationBaseController->setRequest($this->AdministrationBaseController->getRequest()->withAttribute('authentication', $this->getAuthenticationServiceMock()));
+        $this->AdministrationBaseController->Authentication->setIdentity(new Identity($data));
 
         if ($expected instanceof \Exception) {
             $this->expectException(get_class($expected));
@@ -213,16 +216,20 @@ class AdministrationBaseControllerTest extends TestCase
             'readonly',
             'deleteonly',
         ];
-        $viewVars = (array)$this->AdministrationBaseController->viewVars;
+        $viewVars = (array)$this->AdministrationBaseController->viewBuilder()->getVars();
         foreach ($keys as $expectedKey) {
             static::assertArrayHasKey($expectedKey, $viewVars);
         }
 
         $config = array_merge($this->defaultRequestConfig, []);
         $request = new ServerRequest($config);
-        $this->AdministrationBaseController = new WrongAdminBaseController($request);
+        $this->AdministrationBaseController = new class ($request) extends AdministrationBaseController
+        {
+            protected $resourceType = 'wrongtype';
+        };
+
         $this->AdministrationBaseController->index();
-        $viewVars = (array)$this->AdministrationBaseController->viewVars;
+        $viewVars = (array)$this->AdministrationBaseController->viewBuilder()->getVars();
         foreach ($keys as $expectedKey) {
             static::assertArrayNotHasKey($expectedKey, $viewVars);
         }
@@ -245,7 +252,7 @@ class AdministrationBaseControllerTest extends TestCase
                         'resource_type' => 'roles',
                     ],
                 ],
-                '[400] Invalid data',
+                '[400] Not Found',
             ],
             'patch 404' => [
                 [
@@ -277,7 +284,7 @@ class AdministrationBaseControllerTest extends TestCase
         $response = $this->RlsController->save();
         static::assertEquals(302, $response->getStatusCode());
         static::assertEquals('/admin/roles', $response->getHeader('Location')[0]);
-        $flash = $this->RlsController->request->getSession()->read('Flash');
+        $flash = $this->RlsController->getRequest()->getSession()->read('Flash');
         $actual = $flash['flash'][0]['message'];
         static::assertEquals($expected, $actual);
     }
@@ -303,7 +310,7 @@ class AdministrationBaseControllerTest extends TestCase
         $response = $this->RlsController->remove('9999999999');
         static::assertEquals(302, $response->getStatusCode());
         static::assertEquals('/admin/roles', $response->getHeader('Location')[0]);
-        $flash = $this->RlsController->request->getSession()->read('Flash');
+        $flash = $this->RlsController->getRequest()->getSession()->read('Flash');
         $expected = __('[404] Not Found');
         $message = $flash['flash'][0]['message'];
         static::assertEquals($expected, $message);

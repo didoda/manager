@@ -1,9 +1,20 @@
 <?php
+/**
+ * BEdita, API-first content management framework
+ * Copyright 2022 Atlas Srl, Chialab Srl
+ *
+ * This file is part of BEdita: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * See LICENSE.LGPL or <http://gnu.org/licenses/lgpl-3.0.html> for more details.
+ */
 namespace App\Controller\Admin;
 
 use App\Controller\AppController;
 use BEdita\SDK\BEditaClientException;
-use Cake\Event\Event;
+use Cake\Event\EventInterface;
 use Cake\Http\Exception\UnauthorizedException;
 use Cake\Http\Response;
 use Cake\Utility\Hash;
@@ -49,6 +60,13 @@ abstract class AdministrationBaseController extends AppController
     protected $properties = [];
 
     /**
+     * Properties that are secrets
+     *
+     * @var array
+     */
+    protected $propertiesSecrets = [];
+
+    /**
      * Meta to show in index columns
      *
      * @var array
@@ -56,7 +74,7 @@ abstract class AdministrationBaseController extends AppController
     protected $meta = ['created', 'modified'];
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function initialize(): void
     {
@@ -70,14 +88,16 @@ abstract class AdministrationBaseController extends AppController
      *
      * {@inheritDoc}
      */
-    public function beforeFilter(Event $event): ?Response
+    public function beforeFilter(EventInterface $event): ?Response
     {
         $res = parent::beforeFilter($event);
         if ($res !== null) {
             return $res;
         }
 
-        $roles = $this->Auth->user('roles');
+        /** @var \Authentication\Identity|null $user */
+        $user = $this->Authentication->getIdentity();
+        $roles = (array)$user->get('roles');
         if (empty($roles) || !in_array('admin', $roles)) {
             throw new UnauthorizedException(__('Module access not authorized'));
         }
@@ -92,14 +112,14 @@ abstract class AdministrationBaseController extends AppController
      */
     public function index(): ?Response
     {
-        $this->request->allowMethod(['get']);
-        $query = $this->request->getQueryParams();
+        $this->getRequest()->allowMethod(['get']);
+        $query = $this->getRequest()->getQueryParams();
 
         try {
             $endpoint = $this->resourceType === 'roles' ? $this->endpoint : sprintf('%s/%s', $this->endpoint, $this->resourceType);
             $response = $this->apiClient->get($endpoint, $query);
         } catch (BEditaClientException $e) {
-            $this->log($e, 'error');
+            $this->log($e->getMessage(), 'error');
             $this->Flash->error($e->getMessage(), ['params' => $e]);
 
             return $this->redirect(['_name' => 'dashboard']);
@@ -110,6 +130,7 @@ abstract class AdministrationBaseController extends AppController
         $this->set('links', (array)$response['links']);
         $this->set('resourceType', $this->resourceType);
         $this->set('properties', $this->properties);
+        $this->set('propertiesSecrets', $this->propertiesSecrets);
         $this->set('metaColumns', $this->meta);
         $this->set('filter', []);
         $this->set('schema', (array)$this->Schema->getSchema($this->resourceType));
@@ -126,8 +147,8 @@ abstract class AdministrationBaseController extends AppController
      */
     public function save(): ?Response
     {
-        $this->request->allowMethod(['post']);
-        $data = (array)$this->request->getData();
+        $this->getRequest()->allowMethod(['post']);
+        $data = (array)$this->getRequest()->getData();
         $id = (string)Hash::get($data, 'id');
         unset($data['id']);
         $body = [
@@ -145,7 +166,7 @@ abstract class AdministrationBaseController extends AppController
                 $this->apiClient->patch(sprintf('%s/%s', $endpoint, $id), json_encode($body));
             }
         } catch (BEditaClientException $e) {
-            $this->log($e, 'error');
+            $this->log($e->getMessage(), 'error');
             $this->Flash->error($e->getMessage(), ['params' => $e]);
         }
 
@@ -156,15 +177,15 @@ abstract class AdministrationBaseController extends AppController
      * Remove roles by ID
      *
      * @param string $id The role ID
-     * @return Response|null
+     * @return \Cake\Http\Response|null
      */
     public function remove(string $id): ?Response
     {
-        $this->request->allowMethod(['post']);
+        $this->getRequest()->allowMethod(['post']);
         try {
             $this->apiClient->delete(sprintf('%s/%s', $this->endpoint(), $id));
         } catch (BEditaClientException $e) {
-            $this->log($e, 'error');
+            $this->log($e->getMessage(), 'error');
             $this->Flash->error($e->getMessage(), ['params' => $e]);
         }
 

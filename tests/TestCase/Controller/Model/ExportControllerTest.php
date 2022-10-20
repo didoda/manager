@@ -36,7 +36,14 @@ class ExportControllerTest extends TestCase
     public $Export;
 
     /**
-     * {@inheritDoc}
+     * Client API
+     *
+     * @var \BEdita\SDK\BEditaClient
+     */
+    public $apiClient;
+
+    /**
+     * @inheritDoc
      */
     public function setUp(): void
     {
@@ -44,7 +51,7 @@ class ExportControllerTest extends TestCase
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function tearDown(): void
     {

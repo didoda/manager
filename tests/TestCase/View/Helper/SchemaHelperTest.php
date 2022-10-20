@@ -35,7 +35,7 @@ class SchemaHelperTest extends TestCase
     public $Schema;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function setUp(): void
     {
@@ -66,7 +66,7 @@ class SchemaHelperTest extends TestCase
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function tearDown(): void
     {
@@ -244,6 +244,7 @@ class SchemaHelperTest extends TestCase
                         ['value' => 'bad', 'text' => 'Bad'],
                     ],
                     'type' => 'select',
+                    'value' => 'good',
                 ],
                 // schema type
                 [
@@ -265,6 +266,7 @@ class SchemaHelperTest extends TestCase
                         ['value' => 'bad', 'text' => 'Bad'],
                     ],
                     'type' => 'select',
+                    'value' => 'good',
                 ],
                 // schema type
                 [
@@ -295,7 +297,7 @@ class SchemaHelperTest extends TestCase
                     'type' => 'boolean',
                 ],
                 'company',
-                true,
+                'true',
             ],
             'array multiple checkbox' => [
                 // expected result
@@ -364,7 +366,6 @@ class SchemaHelperTest extends TestCase
      * @param string $name The field name.
      * @param string|null $value The field value.
      * @return void
-     *
      * @dataProvider controlOptionsSchemaProvider()
      * @covers ::controlOptions()
      */
@@ -379,7 +380,6 @@ class SchemaHelperTest extends TestCase
      * Test `lang` property
      *
      * @return void
-     *
      * @covers ::controlOptions()
      */
     public function testLang(): void
@@ -400,6 +400,10 @@ class SchemaHelperTest extends TestCase
 
         $expected = [
             'options' => [
+                [
+                    'value' => '',
+                    'text' => '',
+                ],
                 [
                     'value' => 'en',
                     'text' => 'English',
@@ -492,7 +496,6 @@ class SchemaHelperTest extends TestCase
      * @param array $properties The properties
      * @param array $expected Expected result
      * @return void
-     *
      * @dataProvider translatableFieldsProvider()
      * @covers ::translatableFields()
      * @covers ::translatableType()
@@ -501,6 +504,26 @@ class SchemaHelperTest extends TestCase
     {
         $actual = $this->Schema->translatableFields($properties);
         static::assertSame($expected, $actual);
+    }
+
+    /**
+     * Test `translatableFields` method with `Properties` configuration
+     *
+     * @covers ::translatableFields()
+     */
+    public function testTranslatableFieldsConfiguration(): void
+    {
+        $properties = [
+            'field1' => [
+                'type' => 'object',
+            ],
+        ];
+        $actual = $this->Schema->translatableFields($properties);
+        static::assertEmpty($actual);
+
+        Configure::write('Properties.documents.translatable', ['field1']);
+        $actual = $this->Schema->translatableFields($properties, 'documents');
+        static::assertEquals(['field1'], $actual);
     }
 
     /**
@@ -595,10 +618,10 @@ class SchemaHelperTest extends TestCase
     /**
      * Test `format` method
      *
-     * @param array $properties The properties
      * @param array $expected Expected result
+     * @param mixed $value The value
+     * @param array $schema The schema
      * @return void
-     *
      * @dataProvider formatProvider()
      * @covers ::format()
      * @covers ::formatByte()
@@ -721,7 +744,6 @@ class SchemaHelperTest extends TestCase
      * @param array $schema The property schema
      * @param bool $expected Expected result
      * @return void
-     *
      * @dataProvider sortableProvider()
      * @covers ::sortable()
      */

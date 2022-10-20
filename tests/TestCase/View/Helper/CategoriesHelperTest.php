@@ -31,7 +31,7 @@ class CategoriesHelperTest extends TestCase
     public $Categories;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function setUp(): void
     {
@@ -40,7 +40,7 @@ class CategoriesHelperTest extends TestCase
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function tearDown(): void
     {
@@ -72,7 +72,7 @@ class CategoriesHelperTest extends TestCase
                     ['name' => 'dummy1', 'label' => 'Dummy 1'],
                     ['name' => 'dummy3', 'label' => 'Dummy 3'],
                 ],
-                '<div class="categories"><h3>Global</h3><div class="input select"><input type="hidden" name="categories" value=""/><div class="checkbox"><label for="categories-dummy1" class="selected"><input type="checkbox" name="categories[]" value="dummy1" checked="checked" id="categories-dummy1">Dummy 1</label></div><div class="checkbox"><label for="categories-dummy2"><input type="checkbox" name="categories[]" value="dummy2" id="categories-dummy2">Dummy 2</label></div><div class="checkbox"><label for="categories-dummy3" class="selected"><input type="checkbox" name="categories[]" value="dummy3" checked="checked" id="categories-dummy3">Dummy 3</label></div><div class="checkbox"><label for="categories-dummy4"><input type="checkbox" name="categories[]" value="dummy4" id="categories-dummy4">Dummy 4</label></div><div class="checkbox"><label for="categories-dummy5"><input type="checkbox" name="categories[]" value="dummy5" id="categories-dummy5">Dummy 5</label></div></div></div>',
+                '<div class="categories"><h3>Global</h3><div class="input select"><input type="hidden" name="categories" id="categories" value=""/><div class="checkbox"><label for="categories-dummy1" class="selected"><input type="checkbox" name="categories[]" value="dummy1" checked="checked" id="categories-dummy1">Dummy 1</label></div><div class="checkbox"><label for="categories-dummy2"><input type="checkbox" name="categories[]" value="dummy2" id="categories-dummy2">Dummy 2</label></div><div class="checkbox"><label for="categories-dummy3" class="selected"><input type="checkbox" name="categories[]" value="dummy3" checked="checked" id="categories-dummy3">Dummy 3</label></div><div class="checkbox"><label for="categories-dummy4"><input type="checkbox" name="categories[]" value="dummy4" id="categories-dummy4">Dummy 4</label></div><div class="checkbox"><label for="categories-dummy5"><input type="checkbox" name="categories[]" value="dummy5" id="categories-dummy5">Dummy 5</label></div></div></div>',
             ],
             'is tree' => [
                 [
@@ -89,7 +89,7 @@ class CategoriesHelperTest extends TestCase
                     ['name' => 'dummy1', 'label' => 'Dummy 1'],
                     ['name' => 'dummy3', 'label' => 'Dummy 3'],
                 ],
-                '<div class="categories"><h3>Global</h3><div class="input select"><input type="hidden" name="categories" value=""/><div class="checkbox"><label for="categories-dummy1" class="selected"><input type="checkbox" name="categories[]" value="dummy1" checked="checked" id="categories-dummy1">Dummy 1</label></div></div></div><div class="categories"><h3>Dummy 2</h3><div class="input select"><div class="checkbox"><label for="categories-dummy3" class="selected"><input type="checkbox" name="categories[]" value="dummy3" checked="checked" id="categories-dummy3">Dummy 3</label></div><div class="checkbox"><label for="categories-dummy4"><input type="checkbox" name="categories[]" value="dummy4" id="categories-dummy4">Dummy 4</label></div><div class="checkbox"><label for="categories-dummy5"><input type="checkbox" name="categories[]" value="dummy5" id="categories-dummy5">Dummy 5</label></div></div></div>',
+                '<div class="categories"><h3>Global</h3><div class="input select"><input type="hidden" name="categories" id="categories" value=""/><div class="checkbox"><label for="categories-dummy1" class="selected"><input type="checkbox" name="categories[]" value="dummy1" checked="checked" id="categories-dummy1">Dummy 1</label></div></div></div><div class="categories"><h3>Dummy 2</h3><div class="input select"><div class="checkbox"><label for="categories-dummy3" class="selected"><input type="checkbox" name="categories[]" value="dummy3" checked="checked" id="categories-dummy3">Dummy 3</label></div><div class="checkbox"><label for="categories-dummy4"><input type="checkbox" name="categories[]" value="dummy4" id="categories-dummy4">Dummy 4</label></div><div class="checkbox"><label for="categories-dummy5"><input type="checkbox" name="categories[]" value="dummy5" id="categories-dummy5">Dummy 5</label></div></div></div>',
             ],
         ];
     }
@@ -138,7 +138,7 @@ class CategoriesHelperTest extends TestCase
                     ['name' => 'dummy3', 'label' => 'Dummy 3'],
                 ],
                 [],
-                '<div class="categories"><h3>Global</h3><div class="input select"><label for="categories">Categories</label><input type="hidden" name="categories" value=""/><div class="checkbox"><label for="categories-dummy1" class="selected"><input type="checkbox" name="categories[]" value="dummy1" checked="checked" id="categories-dummy1">Dummy 1</label></div></div></div><div class="categories"><h3>Dummy 2</h3><div class="input select"><label for="categories">Categories</label><div class="checkbox"><label for="categories-dummy3" class="selected"><input type="checkbox" name="categories[]" value="dummy3" checked="checked" id="categories-dummy3">Dummy 3</label></div><div class="checkbox"><label for="categories-dummy4"><input type="checkbox" name="categories[]" value="dummy4" id="categories-dummy4">Dummy 4</label></div><div class="checkbox"><label for="categories-dummy5"><input type="checkbox" name="categories[]" value="dummy5" id="categories-dummy5">Dummy 5</label></div></div></div>',
+                '<div class="categories"><h3>Global</h3><div class="input select"><label for="categories">Categories</label><input type="hidden" name="categories" id="categories" value=""/><div class="checkbox"><label for="categories-dummy1" class="selected"><input type="checkbox" name="categories[]" value="dummy1" checked="checked" id="categories-dummy1">Dummy 1</label></div></div></div><div class="categories"><h3>Dummy 2</h3><div class="input select"><label for="categories">Categories</label><div class="checkbox"><label for="categories-dummy3" class="selected"><input type="checkbox" name="categories[]" value="dummy3" checked="checked" id="categories-dummy3">Dummy 3</label></div><div class="checkbox"><label for="categories-dummy4"><input type="checkbox" name="categories[]" value="dummy4" id="categories-dummy4">Dummy 4</label></div><div class="checkbox"><label for="categories-dummy5"><input type="checkbox" name="categories[]" value="dummy5" id="categories-dummy5">Dummy 5</label></div></div></div>',
             ],
         ];
     }
@@ -345,7 +345,7 @@ class CategoriesHelperTest extends TestCase
                 true,
                 [
                     [
-                        'id' => '0', 'name' => 'Global', 'label' => 'Global', 'parent_id' => null,
+                        'id' => '0', 'name' => '_', 'label' => 'Global', 'parent_id' => null,
                         'children' => [
                             ['id' => 2, 'name' => 'dummy2', 'parent_id' => null],
                             ['id' => 6, 'name' => 'dummy6', 'parent_id' => null],
@@ -381,7 +381,7 @@ class CategoriesHelperTest extends TestCase
                 [
                     [
                         'id' => '0',
-                        'name' => 'Global',
+                        'name' => '_',
                         'label' => 'Global',
                         'children' => [
                             ['id' => 1, 'name' => 'dummy1', 'parent_id' => null],
@@ -404,7 +404,7 @@ class CategoriesHelperTest extends TestCase
                 [
                     [
                         'id' => '0',
-                        'name' => 'Global',
+                        'name' => '_',
                         'label' => 'Global',
                         'children' => [
                             ['id' => 2, 'name' => 'dummy2', 'parent_id' => null],

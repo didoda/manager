@@ -3,7 +3,6 @@ return [
     /**
      * Default properties schema for internal resources.
      * Schema properties are described using JSON Schema.
-     *
      */
     'SchemaProperties' => [
 
@@ -89,7 +88,7 @@ return [
                 ],
                 '$id' => '/properties/hidden',
                 'title' => 'Hidden',
-                'description' => 'Object type entity associations',
+                'description' => 'Object type hidden properties',
             ],
         ],
 
@@ -225,6 +224,36 @@ return [
             ],
         ],
 
+        // model/tags
+        'tags' => [
+            'id' => [
+                'type' => 'integer',
+                '$id' => '/properties/id',
+                'title' => 'Id',
+                'description' => '',
+                'readOnly' => true,
+            ],
+            'name' => [
+                'type' => 'string',
+                '$id' => '/properties/name',
+                'title' => 'Name',
+                'description' => 'Tag name',
+            ],
+            'label' => [
+                'type' => 'string',
+                '$id' => '/properties/label',
+                'title' => 'Label',
+                'description' => 'Tag label',
+            ],
+            'enabled' => [
+                'type' => 'boolean',
+                '$id' => '/properties/enabled',
+                'title' => 'Enabled',
+                'description' => '',
+                'default' => true,
+            ],
+        ],
+
         // admin/applications
         'applications' => [
             'id' => [
@@ -236,9 +265,15 @@ return [
             ],
             'api_key' => [
                 'type' => 'string',
-                '$id' => '/properties/name',
-                'title' => 'Api Key',
+                '$id' => '/properties/api_key',
+                'title' => 'Api Key / Client Id',
                 'description' => 'Application api key',
+            ],
+            'client_secret' => [
+                'type' => 'string',
+                '$id' => '/properties/client_secret',
+                'title' => 'Client Secret',
+                'description' => 'Application client secret',
             ],
             'name' => [
                 'type' => 'string',

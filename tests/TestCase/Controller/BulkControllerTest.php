@@ -3,7 +3,14 @@ namespace App\Test\TestCase\Controller;
 
 use App\Controller\BulkController;
 use App\Controller\Component\SchemaComponent;
+use App\Utility\CacheTools;
+use Authentication\AuthenticationServiceInterface;
+use Authentication\Identity;
+use Authentication\IdentityInterface;
+use Cake\Cache\Cache;
 use Cake\Http\ServerRequest;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReflectionProperty;
 
 /**
@@ -15,6 +22,32 @@ use ReflectionProperty;
 class BulkControllerTest extends BaseControllerTest
 {
     /**
+     * Test Modules controller
+     *
+     * @var \App\Controller\BulkController
+     */
+    public $controller;
+
+    /**
+     * @inheritDoc
+     */
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->loadRoutes();
+        Cache::enable();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function tearDown(): void
+    {
+        Cache::disable();
+        parent::tearDown();
+    }
+
+    /**
      * Setup controller to test with request config
      *
      * @param array|null $requestConfig
@@ -25,11 +58,48 @@ class BulkControllerTest extends BaseControllerTest
         $config = array_merge($this->defaultRequestConfig, $requestConfig);
         $request = new ServerRequest($config);
         $this->controller = new BulkController($request);
+        // Mock Authentication component
+        $this->controller->setRequest($this->controller->getRequest()->withAttribute('authentication', $this->getAuthenticationServiceMock()));
+        $this->controller->Authentication->setIdentity(new Identity(['id' => 'dummy']));
+        // Mock GET /config using cache
+        Cache::write(CacheTools::cacheKey('config.AlertMessage'), []);
+        Cache::write(CacheTools::cacheKey('config.Export'), []);
+        Cache::write(CacheTools::cacheKey('config.Modules'), []);
+        Cache::write(CacheTools::cacheKey('config.Pagination'), []);
+        Cache::write(CacheTools::cacheKey('config.Properties'), []);
+        Cache::write(CacheTools::cacheKey('config.Project'), []);
+
         // force modules load
-        $this->controller->Auth->setUser(['id' => 'dummy']);
         $this->controller->Modules->startup();
         $this->setupApi();
         $this->createTestObject();
+    }
+
+    /**
+     * Get mocked AuthenticationService.
+     *
+     * @return AuthenticationServiceInterface
+     */
+    protected function getAuthenticationServiceMock(): AuthenticationServiceInterface
+    {
+        $authenticationService = $this->getMockBuilder(AuthenticationServiceInterface::class)
+            ->getMock();
+        $authenticationService->method('clearIdentity')
+            ->willReturnCallback(function (ServerRequestInterface $request, ResponseInterface $response): array {
+                return [
+                    'request' => $request->withoutAttribute('identity'),
+                    'response' => $response,
+                ];
+            });
+        $authenticationService->method('persistIdentity')
+            ->willReturnCallback(function (ServerRequestInterface $request, ResponseInterface $response, IdentityInterface $identity): array {
+                return [
+                    'request' => $request->withAttribute('identity', $identity),
+                    'response' => $response,
+                ];
+            });
+
+        return $authenticationService;
     }
 
     /**
@@ -42,7 +112,7 @@ class BulkControllerTest extends BaseControllerTest
     {
         // Setup controller for test
         $this->setupController();
-        $actual = (string)$this->controller->request->getParam('object_type');
+        $actual = (string)$this->controller->getRequest()->getParam('object_type');
         $expected = 'documents';
         static::assertEquals($expected, $actual);
     }
@@ -224,7 +294,10 @@ class BulkControllerTest extends BaseControllerTest
 
         // get object for test
         $o = $this->getTestObject();
-        $this->controller->ids = [$o['id']];
+        // set $this->controller->ids
+        $property = new \ReflectionProperty(BulkController::class, 'ids');
+        $property->setAccessible(true);
+        $property->setValue($this->controller, [$o['id']]);
         $attributes = ['status' => 'on'];
 
         // do controller call
@@ -236,8 +309,11 @@ class BulkControllerTest extends BaseControllerTest
         // check empty errors
         static::assertEmpty($this->controller->getErrors());
 
-        // // do controller call
-        $this->controller->ids = ['123456789'];
+        // do controller call
+        // set $this->controller->ids
+        $property = new \ReflectionProperty(BulkController::class, 'ids');
+        $property->setAccessible(true);
+        $property->setValue($this->controller, ['123456789']);
         $method->invokeArgs($this->controller, [$attributes]);
 
         // check not empty errors
@@ -255,7 +331,10 @@ class BulkControllerTest extends BaseControllerTest
         // Setup controller for test
         $this->setupController();
 
-        $this->controller->categories = '123,456,789';
+        // set $this->controller->categories
+        $property = new \ReflectionProperty(BulkController::class, 'categories');
+        $property->setAccessible(true);
+        $property->setValue($this->controller, '123,456,789');
 
         // mock schema component
         $mockResponse = [
@@ -296,7 +375,9 @@ class BulkControllerTest extends BaseControllerTest
 
         // get object for test
         $o = $this->getTestObject();
-        $this->controller->ids = [$o['id']];
+        $property = new \ReflectionProperty(BulkController::class, 'ids');
+        $property->setAccessible(true);
+        $property->setValue($this->controller, [$o['id']]);
 
         // do controller call
         $reflectionClass = new \ReflectionClass($this->controller);
@@ -308,7 +389,10 @@ class BulkControllerTest extends BaseControllerTest
         static::assertEmpty($this->controller->getErrors());
 
         // do controller call
-        $this->controller->ids = ['123456789'];
+        // set $this->controller->ids
+        $property = new \ReflectionProperty(BulkController::class, 'ids');
+        $property->setAccessible(true);
+        $property->setValue($this->controller, ['123456789']);
         $method->invokeArgs($this->controller, []);
 
         // check not empty errors
@@ -328,7 +412,10 @@ class BulkControllerTest extends BaseControllerTest
 
         // get object for test
         $o = $this->getTestObject();
-        $this->controller->ids = [$o['id']];
+        // set $this->controller->ids
+        $property = new \ReflectionProperty(BulkController::class, 'ids');
+        $property->setAccessible(true);
+        $property->setValue($this->controller, [$o['id']]);
 
         // get folder for test
         $f = $this->createTestFolder();
@@ -362,7 +449,10 @@ class BulkControllerTest extends BaseControllerTest
 
         // get object for test
         $o = $this->getTestObject();
-        $this->controller->ids = [$o['id']];
+        // set $this->controller->ids
+        $property = new \ReflectionProperty(BulkController::class, 'ids');
+        $property->setAccessible(true);
+        $property->setValue($this->controller, [$o['id']]);
 
         // get folder for test
         $f = $this->createTestFolder();
@@ -384,29 +474,124 @@ class BulkControllerTest extends BaseControllerTest
     }
 
     /**
+     * Test `custom` method with missing custom action
+     *
+     * @return void
+     * @covers ::custom()
+     * @covers ::performCustomAction
+     * @covers ::modulesListRedirect()
+     */
+    public function testCustomMissing(): void
+    {
+        // Setup again for test
+        $this->setupController([
+            'environment' => [
+                'REQUEST_METHOD' => 'POST',
+            ],
+            'post' => [
+                'ids' => '999',
+                'custom_action' => 'undefinedAction',
+            ],
+            'params' => [
+                'object_type' => 'documents',
+            ],
+        ]);
+
+        // do controller call
+        $result = $this->controller->custom();
+        static::assertEquals(302, $result->getStatusCode());
+        static::assertEquals(['/documents'], $result->getHeader('Location'));
+        // check not empty errors
+        static::assertNotEmpty($this->controller->getErrors());
+    }
+
+    /**
+     * Test `custom` method with custom action
+     *
+     * @return void
+     * @covers ::custom()
+     * @covers ::performCustomAction
+     */
+    public function testCustomAction(): void
+    {
+        // Setup again for test
+        $this->setupController([
+            'environment' => [
+                'REQUEST_METHOD' => 'POST',
+            ],
+            'post' => [
+                'ids' => '999',
+                'custom_action' => CustomBulkAction::class,
+            ],
+            'params' => [
+                'object_type' => 'documents',
+            ],
+        ]);
+
+        // do controller call
+        $this->controller->custom();
+        static::assertEmpty($this->controller->getErrors());
+    }
+
+    /**
+     * Test `custom` method with bad custom action class
+     *
+     * @return void
+     * @covers ::custom()
+     * @covers ::performCustomAction
+     */
+    public function testCustomWrong(): void
+    {
+        // Setup again for test
+        $this->setupController([
+            'environment' => [
+                'REQUEST_METHOD' => 'POST',
+            ],
+            'post' => [
+                'ids' => '999',
+                'custom_action' => '\App\Utility\Schema',
+            ],
+        ]);
+
+        // do controller call
+        $this->controller->custom();
+        static::assertEquals(['Custom action class \App\Utility\Schema is not valid'], $this->controller->getErrors());
+    }
+
+    /**
      * Test `errors` method
      *
      * @return void
-     * @covers ::errors()
+     * @covers ::showResult()
      */
-    public function testErrors(): void
+    public function testShowResult(): void
     {
         // Setup controller for test
         $this->setupController();
 
         // empty
-        $this->controller->errors = [];
+        // set $this->controller->errors
+        $property = new \ReflectionProperty(BulkController::class, 'errors');
+        $property->setAccessible(true);
+        $property->setValue($this->controller, []);
         $reflectionClass = new \ReflectionClass($this->controller);
-        $method = $reflectionClass->getMethod('errors');
+        $method = $reflectionClass->getMethod('showResult');
         $method->setAccessible(true);
         $method->invokeArgs($this->controller, []);
-        $message = $this->controller->request->getSession()->read('Flash');
-        static::assertEmpty($message);
+        $message = $this->controller->getRequest()->getSession()->read('Flash');
+        static::assertEquals(1, count($message['flash']));
+        static::assertEquals('Bulk action performed on 0 objects', $message['flash'][0]['message']);
+        static::assertEquals('flash/success', $message['flash'][0]['element']);
 
         // not empty
-        $this->controller->errors = ['something bad happened'];
+        // set $this->controller->errors
+        $property = new \ReflectionProperty(BulkController::class, 'errors');
+        $property->setAccessible(true);
+        $property->setValue($this->controller, ['something bad happened']);
         $method->invokeArgs($this->controller, []);
-        $message = $this->controller->request->getSession()->read('Flash');
-        static::assertNotEmpty($message);
+        $message = $this->controller->getRequest()->getSession()->read('Flash');
+        static::assertEquals(1, count($message['flash']));
+        static::assertEquals('Bulk Action failed on: ', $message['flash'][0]['message']);
+        static::assertEquals('flash/error', $message['flash'][0]['element']);
     }
 }

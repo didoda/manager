@@ -18,6 +18,9 @@ use Cake\Core\Configure;
 use Cake\Http\Response;
 use Cake\Http\ServerRequestFactory;
 use Cake\TestSuite\TestCase;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
 /**
  * {@see \App\Middleware\ProjectMiddleware} Test Case
@@ -27,33 +30,6 @@ use Cake\TestSuite\TestCase;
 class ProjectMiddlewareTest extends TestCase
 {
     /**
-     * Fake next middleware
-     *
-     * @var callable
-     */
-    protected $nextMiddleware;
-
-    /**
-     * {@inheritDoc}
-     */
-    public function setUp(): void
-    {
-        parent::setUp();
-        $this->nextMiddleware = function ($req, $res) {
-            return $res;
-        };
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function tearDown(): void
-    {
-        parent::tearDown();
-        $this->nextMiddleware = null;
-    }
-
-    /**
      * Data provider for `testInvoke()`
      *
      * @return array
@@ -61,12 +37,20 @@ class ProjectMiddlewareTest extends TestCase
     public function invokeProvider(): array
     {
         return [
-            'test project' => [
+            'test session' => [
                 [
                     'name' => 'Test',
                 ],
                 [
                     '_project' => 'test',
+                ],
+            ],
+            'test request' => [
+                [
+                    'name' => 'Test',
+                ],
+                [
+                    'project' => 'test',
                 ],
             ],
             'no project' => [
@@ -79,26 +63,33 @@ class ProjectMiddlewareTest extends TestCase
     }
 
     /**
-     * Test `__invoke` method.
+     * Test `process` method.
      *
      * @param int $expected The HTTP status code expected
      * @param array $data Request session data
-     * @param array $server The server vars
      * @return void
-     *
      * @dataProvider invokeProvider
      * @covers ::__construct()
-     * @covers ::__invoke()
+     * @covers ::process()
      * @covers ::detectProject()
      */
     public function testInvoke($expected, $data): void
     {
+        Configure::write('Project', null);
         $request = ServerRequestFactory::fromGlobals();
         $request->getSession()->write($data);
-        $response = new Response();
+        foreach ($data as $key => $value) {
+            $request = $request->withData($key, $value);
+        }
         $app = new Application(CONFIG);
         $middleware = new ProjectMiddleware($app, TESTS . 'files' . DS . 'projects' . DS);
-        $response = $middleware($request, $response, $this->nextMiddleware);
+        $handler = new class () implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new Response();
+            }
+        };
+        $middleware->process($request, $handler);
 
         $project = Configure::read('Project');
         static::assertEquals($expected, $project);

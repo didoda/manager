@@ -69,29 +69,37 @@
         </div>
 
         <header class="is-flex space-between mt-05">
-            <h1 class="title m-0 has-text-size-small">
-                {% if translation %}
-                    <span v-if="related.attributes.translated_fields && related.attributes.translated_fields.title ">
-                        <: related.attributes.translated_fields.title :>
-                    </span>
-                {% else %}
-                    <: related.attributes.title || related.attributes.name || related.attributes.uname || '-' :>
+            <div>
+
+                <h1 class="title m-0 has-text-size-small" style="padding-bottom: 7px;">
+                    {% if translation %}
+                        <span v-if="related.attributes.translated_fields && related.attributes.translated_fields.title ">
+                            <: related.attributes.translated_fields.title :>
+                        </span>
+                    {% else %}
+                        <: related?.attributes?.title || related?.attributes?.name || related?.attributes?.uname || '-' :>
+                    {% endif %}
+                </h1>
+
+            {% if not add and not stage %}
+
+                {% if in_array('admin', user.roles) %}
+                <div v-if="relatedStream(related)" class="has-text-size-smallest">
+                    <: relatedStreamProp(related, 'mime_type') :>
+                </div>
                 {% endif %}
-            </h1>
 
-            {% if not add %}
-            <span v-if="relatedStream(related)" class="other m-0 has-text-size-small">
-                <: relatedAttribute(related, 'file_name') :>
-            </span>
+                <div v-if="relatedStream(related)" class="has-text-size-smallest">
+                    <: relatedStreamProp(related, 'file_size', 'bytes') :>
+                </div>
 
-            <span v-if="relatedStream(related)" class="other m-0 has-text-size-small">
-                <: relatedAttribute(related, 'mime_type') :>
-            </span>
-
-            <span v-if="relatedStream(related)" class="other m-0 has-text-size-small">
-                <: relatedAttribute(related, 'file_size', 'bytes') :>
-            </span>
+                <div v-if="relatedStream(related)" class="has-text-size-smaller">
+                    <a :href="relatedStreamProp(related, 'url')" target="_blank" class="icon-eye-1" title="{{ __('View file') }}"></a>
+                    <a :href="relatedStreamDownloadUrl(related)" class="icon-download-1" title="{{ __('Download file') }}"></a>
+                </div>
             {% endif %}
+
+            </div>
 
             {% if not translation %}
                 <span class="modified">
@@ -99,8 +107,6 @@
                 </span>
             {% endif %}
 
-            {# <span class="id has-text-size-smallest"><: related.id :></span>
-            <span class="uname has-text-size-smallest"><: related.attributes.uname :></span> #}
         </header>
     </div>
 
@@ -123,14 +129,17 @@
         <button v-if="isPanelOpen(related.id)" class="is-small icon-coffee"
                 @click.prevent.stop="closePanel()">{{ __('cancel') }}</button>
 
+        {% if not readonly %}
         <button v-else class="is-small icon-th-list-1"
             :disabled="isPanelOpen()"
             @click.prevent.stop="editRelationParams({
                 object: {{ object|json_encode }},
                 related: related,
                 relationName: relationName,
+                relationLabel: relationLabel,
                 schema: relationSchema,
             })">{{ __('Edit params') }}</button>
+        {% endif %}
     </div>
     {% endif %}
 
@@ -154,7 +163,9 @@
     <footer class="is-flex space-between mt-05 p-05">
         {% if stage %}
             <a class="button button-outlined-white is-small mr-1" :href="$helpers.buildViewUrl(related.id)" target="_blank">{{ __('Edit') }}</a>
+            {% if not readonly %}
             <a class="button button-outlined-white is-small" @click.prevent="removeAddedRelations(related.id)">{{ __('Remove') }}</a>
+            {% endif %}
 
         {% elseif add %}
             <button class="is-small has-font-weight-bold mr-1"
@@ -163,16 +174,18 @@
             <a class="button button-outlined-white is-small" @click.stop :href="$helpers.buildViewUrl(related.id)" target="_blank">{{ __('Open') }}</a>
 
         {% elseif translation %}
-            {% set baseUrl= Url.build({ '_name': 'translations:edit', 'object_type': object.type, 'id': object.id, 'lang': ''}, true) %}
+            {% set baseUrl= Url.build({ '_name': 'translations:edit', 'object_type': object.type, 'id': object.id, 'lang': ''}, {'fullBase': true}) %}
             <a class="button button-outlined-white is-small mr-1" :href="`{{ baseUrl }}${related.attributes.lang}`" target="_blank">{{ __('Open') }}</a>
             <a class="button button-text is-small" @click.prevent="relationToggle(related)"
                 v-html="containsId(removedRelated, related.id)? '{{__('undo remove') }}' : '{{ __('remove') }}'"></a>
 
         {% else %}
             <a class="button button-outlined-white is-small mr-1" :href="$helpers.buildViewUrl(related.id)" target="_blank" v-show="moduleAvailable(related.type)">{{ __('Edit') }}</a>
+            {% if not readonly %}
             <a class="button button-text is-small" @click.prevent="relationToggle(related)" :class="containsId(removedRelated, related.id) ? 'icon-cw-2' : 'icon-unlink'"
                 v-html="containsId(removedRelated, related.id) ? '{{__('undo') }}' : '{{ __('remove') }}'">
             </a>
+            {% endif %}
         {% endif %}
     </footer>
     {% endif %}
