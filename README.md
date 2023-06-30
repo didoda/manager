@@ -19,7 +19,7 @@ Official Backend Admin WebApp for [BEdita4 and BEdita5 API](https://gihub.com/be
 * [Node](https://nodejs.org) 14 or 16
 * [Yarn](https://yarnpkg.com) >= 1.15
 
-## Install
+## Install.
 
 * Create project via `composer`
 
