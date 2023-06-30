@@ -1,16 +1,27 @@
 name: Release
 
 on:
-  pull_request_target:
+  pull_request_target: # Come prima
     types: [closed]
+  workflow_dispatch: # Questo per il dispatch manuale
+    inputs:
+      releaseType:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
 
 jobs:
-
   release_job:
     uses: bedita/github-workflows/.github/workflows/release.yml@feat/release-manual-version-bumop
     with:
       main_branch: 'master'
       dist_branches: '["master", "3.x"]'
+      release_type: ${{ inputs.releaseType }}
       version_ini_path: config/version.ini
       version_ini_prefix: "[Manager]\nversion="
 
